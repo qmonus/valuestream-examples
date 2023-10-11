@@ -6,6 +6,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: database
+    command: --require_secure_transport=ON
     ports:
       - 3306:3306
     healthcheck:
@@ -25,6 +26,7 @@ services:
       DB_USER: root
       DB_PASS: example
       DB_NAME: database
+      TLS_OPTION: skip-verify
     ports:
       - 8888:8888
     depends_on:
