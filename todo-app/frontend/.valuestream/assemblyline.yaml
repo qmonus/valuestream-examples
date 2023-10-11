@@ -1,0 +1,34 @@
+apiVersion: vs.axis-dev.io/v1
+kind: AssemblyLine
+metadata:
+  name: todo-app-frontend-deploy
+spec:
+  params:
+    - name: gitRevision
+      description: ""
+  results:
+    - name: publicUrl
+      value: $(stages.publish-site.results.publicUrl)
+    - name: gitRevision
+      value: $(inputs.gitRevision)
+  stages:
+    - name: deploy
+      spec:
+        deployment:
+          app: todo-app-frontend
+          name: azure-todo-app-frontend
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+        pipeline: todo-app-frontend-deploy
+    - name: publish-site
+      spec:
+        deployment:
+          app: todo-app-frontend
+          name: azure-todo-app-frontend
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+        pipeline: todo-app-frontend-publish-site
+      runAfter:
+        - deploy
