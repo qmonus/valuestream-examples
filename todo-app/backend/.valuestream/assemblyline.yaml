@@ -1,0 +1,75 @@
+apiVersion: vs.axis-dev.io/v1
+kind: AssemblyLine
+metadata:
+  name: todo-app-backend-deploy
+spec:
+  params:
+    - name: gitRevision
+      description: ""
+  results: []
+  artifacts:
+    - path: ./
+  stages:
+    - name: refer
+      spec:
+        deployment:
+          app: shared-infra
+          name: azure-shared-infra
+        params:
+          - name: referAppName
+            value: shared-infra
+          - name: referDeploymentName
+            value: azure-shared-infra
+          - name: referDeploymentStateName
+            value: app
+        pipeline: todo-app-backend-refer
+    - name: build
+      spec:
+        deployment:
+          app: todo-app-backend
+          name: azure-todo-app-backend
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+          - name: imageTag
+            value: $(inputs.gitRevision)
+          - name: containerRegistry
+            value: $(stages.refer.results.ContainerRegistry)
+          - name: imageRegistryPath
+            value: $(stages.refer.results.ImageRegistryPath)
+          - name: cacheImageName
+            value: $(stages.refer.results.ImageRegistryPath)/$(params.imageShortName)
+        pipeline: todo-app-backend-build
+      runAfter:
+        - refer
+    - name: deploy
+      spec:
+        deployment:
+          app: todo-app-backend
+          name: azure-todo-app-backend
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+          - name: imageName
+            value: $(stages.build.results.imageFullNameTag)
+          - name: azureSubscriptionId
+            value: $(stages.refer.results.AzureSubscriptionId)
+          - name: azureResourceGroupName
+            value: $(stages.refer.results.AzureResourceGroupName)
+          - name: azureStaticIpAddress
+            value: $(stages.refer.results.AzureStaticIpAddress)
+          - name: azureKeyVaultKeyContainerName
+            value: $(stages.refer.results.AzureKeyVaultKeyContainerName)
+          - name: clusterIssuerName
+            value: $(stages.refer.results.ClusterIssuerName)
+          - name: dbHost
+            value: $(stages.refer.results.DbHost)
+          - name: redisHost
+            value: $(stages.refer.results.RedisHost)
+          - name: redisPasswordSecretName
+            value: $(stages.refer.results.RedisPasswordSecretName)
+          - name: host
+            value: $(params.azureDnsARecordName).$(params.azureDnsZoneName)
+        pipeline: todo-app-backend-deploy
+      runAfter:
+        - build

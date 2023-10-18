@@ -1,0 +1,21 @@
+apiVersion: vs.axis-dev.io/v1
+kind: AssemblyLine
+metadata:
+  name: shared-infra-deploy
+spec:
+  params:
+    - name: gitRevision
+      description: ""
+  results: []
+  artifacts:
+    - path: ./
+  stages:
+    - name: deploy
+      spec:
+        deployment:
+          app: shared-infra
+          name: azure-shared-infra
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+        pipeline: shared-infra-deploy
