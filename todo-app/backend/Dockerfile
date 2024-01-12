@@ -7,7 +7,7 @@ COPY . .
 RUN go build -o /go-server
 
 # final stage
-FROM alpine
+FROM golang:1.20-alpine AS runner
 WORKDIR /
 COPY --from=build /go-server /go-server
 EXPOSE 8888
