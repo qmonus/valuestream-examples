@@ -1,0 +1,853 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  annotations:
+    vs.axis-dev.io/stage-type: deploy
+  name: iacs-555-gcp-frontend-deploy
+spec:
+  params:
+    - description: 'iacs-555-gcp-frontend-git-checkout: URL of the GIT repository with https protocol'
+      name: gitCloneUrl
+    - description: 'iacs-555-gcp-frontend-git-checkout: Git source revision'
+      name: gitRevision
+    - default: "true"
+      description: 'iacs-555-gcp-frontend-git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
+      name: gitRepositoryDeleteExisting
+    - default: ""
+      description: 'iacs-555-gcp-frontend-git-checkout: Subdirectory in the source directory to clone Git repository (default: "")'
+      name: gitCheckoutSubDirectory
+    - description: |-
+        iacs-555-gcp-frontend-git-checkout: Git token sercret name
+        iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Git token sercret name
+      name: gitTokenSecretName
+    - default: ""
+      description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Relative path from source directory (default: "")'
+      name: pathToSource
+    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Path to QVS Config'
+      name: qvsConfigPath
+    - description: |-
+        iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config
+        iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: Application Name of QmonusVS
+      name: appName
+    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+      name: gcpProjectId
+    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+      name: gcpFirebaseHostingSiteId
+    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+      name: gcpFirebaseHostingCustomDomainName
+    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+      name: gcpDnsManagedZoneName
+    - description: 'iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: Deployment Name of QmonusVS'
+      name: qvsDeploymentName
+    - default: app
+      description: 'iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: Used as pulumi-stack name suffix (default: app)'
+      name: deployStateName
+    - description: 'iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: The secret name of GCP SA credential'
+      name: gcpServiceAccountSecretName
+  results:
+    - description: Adapter module
+      name: module
+      value: $(tasks.compile.results.module)
+    - description: Adapter version
+      name: adapterRevision
+      value: $(tasks.compile.results.adapterRevision)
+    - description: List of Adapters used in Assemblyline
+      name: adapters
+      value: $(tasks.compile.results.adapters)
+  tasks:
+    - name: checkout
+      params:
+        - name: gitCloneUrl
+          value: $(params.gitCloneUrl)
+        - name: gitRevision
+          value: $(params.gitRevision)
+        - name: gitRepositoryDeleteExisting
+          value: $(params.gitRepositoryDeleteExisting)
+        - name: gitCheckoutSubDirectory
+          value: $(params.gitCheckoutSubDirectory)
+        - name: gitTokenSecretName
+          value: $(params.gitTokenSecretName)
+      taskRef:
+        name: iacs-555-gcp-frontend-git-checkout
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: compile
+      params:
+        - name: pathToSource
+          value: $(params.pathToSource)
+        - name: qvsConfigPath
+          value: $(params.qvsConfigPath)
+        - name: gitTokenSecretName
+          value: $(params.gitTokenSecretName)
+        - name: appName
+          value: $(params.appName)
+        - name: gcpProjectId
+          value: $(params.gcpProjectId)
+        - name: gcpFirebaseHostingSiteId
+          value: $(params.gcpFirebaseHostingSiteId)
+        - name: gcpFirebaseHostingCustomDomainName
+          value: $(params.gcpFirebaseHostingCustomDomainName)
+        - name: gcpDnsManagedZoneName
+          value: $(params.gcpDnsManagedZoneName)
+      runAfter:
+        - checkout
+      taskRef:
+        name: iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: deploy
+      params:
+        - name: appName
+          value: $(params.appName)
+        - name: qvsDeploymentName
+          value: $(params.qvsDeploymentName)
+        - name: deployStateName
+          value: $(params.deployStateName)
+        - name: gcpServiceAccountSecretName
+          value: $(params.gcpServiceAccountSecretName)
+      runAfter:
+        - compile
+      taskRef:
+        name: iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml
+      workspaces:
+        - name: shared
+          workspace: shared
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  annotations:
+    vs.axis-dev.io/stage-type: publish-site
+  name: iacs-555-gcp-frontend-publish-site
+spec:
+  params:
+    - description: 'iacs-555-gcp-frontend-git-checkout: URL of the GIT repository with https protocol'
+      name: gitCloneUrl
+    - description: 'iacs-555-gcp-frontend-git-checkout: Git source revision'
+      name: gitRevision
+    - default: "true"
+      description: 'iacs-555-gcp-frontend-git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
+      name: gitRepositoryDeleteExisting
+    - default: ""
+      description: 'iacs-555-gcp-frontend-git-checkout: Subdirectory in the source directory to clone Git repository (default: "")'
+      name: gitCheckoutSubDirectory
+    - description: 'iacs-555-gcp-frontend-git-checkout: Git token sercret name'
+      name: gitTokenSecretName
+    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Path to QVS Config'
+      name: qvsConfigPath
+    - description: |-
+        iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
+        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: Application Name of QmonusVS
+      name: appName
+    - description: |-
+        iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
+        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: GCP Project ID
+      name: gcpProjectId
+    - description: |-
+        iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
+        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: Firebase Hosting Site ID
+      name: gcpFirebaseHostingSiteId
+    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+      name: gcpFirebaseHostingCustomDomainName
+    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+      name: gcpDnsManagedZoneName
+    - description: |-
+        iacs-555-gcp-frontend-build-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
+        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
+      name: buildTargetDir
+    - default: dist
+      description: 'iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The path to the frontend deploy working directory (default: dist)'
+      name: deployTargetDir
+    - description: 'iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The secret name of GCP SA credential'
+      name: gcpServiceAccountSecretName
+  tasks:
+    - name: checkout
+      params:
+        - name: gitCloneUrl
+          value: $(params.gitCloneUrl)
+        - name: gitRevision
+          value: $(params.gitRevision)
+        - name: gitRepositoryDeleteExisting
+          value: $(params.gitRepositoryDeleteExisting)
+        - name: gitCheckoutSubDirectory
+          value: $(params.gitCheckoutSubDirectory)
+        - name: gitTokenSecretName
+          value: $(params.gitTokenSecretName)
+      taskRef:
+        name: iacs-555-gcp-frontend-git-checkout
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: generate-env-file
+      params:
+        - name: qvsConfigPath
+          value: $(params.qvsConfigPath)
+        - name: appName
+          value: $(params.appName)
+        - name: gcpProjectId
+          value: $(params.gcpProjectId)
+        - name: gcpFirebaseHostingSiteId
+          value: $(params.gcpFirebaseHostingSiteId)
+        - name: gcpFirebaseHostingCustomDomainName
+          value: $(params.gcpFirebaseHostingCustomDomainName)
+        - name: gcpDnsManagedZoneName
+          value: $(params.gcpDnsManagedZoneName)
+      runAfter:
+        - checkout
+      taskRef:
+        name: iacs-555-gcp-frontend-generate-environment-variables-file
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: build
+      params:
+        - name: buildTargetDir
+          value: $(params.buildTargetDir)
+      runAfter:
+        - generate-env-file
+      taskRef:
+        name: iacs-555-gcp-frontend-build-gcp-firebase-hosting
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: deploy
+      params:
+        - name: appName
+          value: $(params.appName)
+        - name: buildTargetDir
+          value: $(params.buildTargetDir)
+        - name: deployTargetDir
+          value: $(params.deployTargetDir)
+        - name: gcpFirebaseHostingSiteId
+          value: $(params.gcpFirebaseHostingSiteId)
+        - name: gcpProjectId
+          value: $(params.gcpProjectId)
+        - name: gcpServiceAccountSecretName
+          value: $(params.gcpServiceAccountSecretName)
+      runAfter:
+        - build
+      taskRef:
+        name: iacs-555-gcp-frontend-deploy-gcp-firebase-hosting
+      workspaces:
+        - name: shared
+          workspace: shared
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: iacs-555-gcp-frontend-git-checkout
+spec:
+  params:
+    - description: URL of the GIT repository with https protocol
+      name: gitCloneUrl
+    - description: Git source revision
+      name: gitRevision
+    - default: "true"
+      description: Clean out of the destination directory if it already exists before cloning
+      name: gitRepositoryDeleteExisting
+    - default: ""
+      description: Subdirectory in the source directory to clone Git repository
+      name: gitCheckoutSubDirectory
+    - description: Git token sercret name
+      name: gitTokenSecretName
+  results:
+    - description: Git commit ID that was checked out by this Task
+      name: gitCommitId
+    - description: The directory that was cloned repository by this Task
+      name: gitCheckoutDirectory
+  steps:
+    - env:
+        - name: GIT_REPO_DELETE_EXISTING
+          value: $(params.gitRepositoryDeleteExisting)
+        - name: GIT_CHECKOUT_DIR
+          value: $(workspaces.shared.path)/source/$(params.gitCheckoutSubDirectory)
+      image: docker:git
+      name: clean-dir
+      script: |
+        if [ "${GIT_REPO_DELETE_EXISTING}" = "true" ]; then
+          if [ -d "${GIT_CHECKOUT_DIR}" ]; then
+            # Delete non-hidden files and directories
+            rm -rf "${GIT_CHECKOUT_DIR:?}"/*
+            # Delete files and directories starting with . but excluding ..
+            rm -rf "${GIT_CHECKOUT_DIR}"/.[!.]*
+            # Delete files and directories starting with .. plus any other character
+            rm -rf "${GIT_CHECKOUT_DIR}"/..?*
+          fi
+        fi
+    - env:
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: $(params.gitTokenSecretName)
+        - name: GIT_CHECKOUT_DIR
+          value: $(workspaces.shared.path)/source/$(params.gitCheckoutSubDirectory)
+      image: docker:git
+      name: git-clone
+      script: |-
+        set +x
+        GIT_REPOSITORY_URL=`echo $(params.gitCloneUrl) | sed "s/https:\/\///g"`
+        GIT_TOKEN=`echo ${GIT_TOKEN} | sed "s/^ //" | sed "s/^　//" | sed "s/ $//" | sed "s/　$//"`
+        git clone https://${GIT_TOKEN}:x-oauth-basic@${GIT_REPOSITORY_URL} ${GIT_CHECKOUT_DIR}
+        set -x
+    - env:
+        - name: GIT_CHECKOUT_DIR
+          value: $(workspaces.shared.path)/source/$(params.gitCheckoutSubDirectory)
+      image: docker:git
+      name: git-checkout
+      script: |
+        cd ${GIT_CHECKOUT_DIR}
+        git fetch origin $(params.gitRevision)
+        git checkout $(params.gitRevision)
+        git rev-parse $(params.gitRevision) | tr -d '\n' | tee $(results.gitCommitId.path)
+        echo ""
+        echo -n ${GIT_CHECKOUT_DIR} | tee $(results.gitCheckoutDirectory.path)
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml
+spec:
+  params:
+    - default: ""
+      description: Relative path from source directory
+      name: pathToSource
+    - description: Path to QVS Config
+      name: qvsConfigPath
+    - description: Git token sercret name
+      name: gitTokenSecretName
+    - description: Parameter used in QVS Config
+      name: appName
+    - description: Parameter used in QVS Config
+      name: gcpProjectId
+    - description: Parameter used in QVS Config
+      name: gcpFirebaseHostingSiteId
+    - description: Parameter used in QVS Config
+      name: gcpFirebaseHostingCustomDomainName
+    - description: Parameter used in QVS Config
+      name: gcpDnsManagedZoneName
+  results:
+    - description: Adapter module
+      name: module
+    - description: Adapter version
+      name: adapterRevision
+    - description: List of Adapters used in Assemblyline
+      name: adapters
+  steps:
+    - image: linuxserver/yq:3.2.3
+      name: display-adapter-info
+      onError: continue
+      script: |-
+        #!/usr/bin/env bash
+
+        # Set Default Pipeline Results
+        echo -n "" > /tekton/results/module
+        echo -n "" > /tekton/results/adapterRevision
+        echo -n "" > /tekton/results/adapters
+
+        # Extract module name
+        module=$(yq -r '.modules[0].name' $(params.qvsConfigPath))
+        echo "module: $module"
+        echo -n $module > /tekton/results/module
+
+        # Extract adapter_revision
+        module_revision=$(yq -r '.modules[0].revision' $(params.qvsConfigPath))
+        module_local_path=$(yq -r '.modules[0].local.path' $(params.qvsConfigPath))
+        module_remote_revision=$(yq -r '.modules[0].remote.revision' $(params.qvsConfigPath))			
+        			
+        if [ "$module_revision" == "null" ]; then
+        	case "$module_local_path" in
+        		null)
+        			# Extract adapter_revision when using remote/repo style module
+        			adapter_revision=$module_remote_revision
+        			;;
+        		*)
+        			# Extract adapter_revision when using local module
+        			qvsctl_mod_path="$(dirname $(params.qvsConfigPath))/${module_local_path}/qvsctl.mod"
+        			if [ -r "$qvsctl_mod_path" ]; then
+        				IFS='@' read -ra separated_list < "$qvsctl_mod_path"
+        				adapter_revision=${separated_list[1]}
+        			fi
+        			;;
+        	esac
+        else
+        	# Extract adapter_revision when using remote module
+        	adapter_revision=$module_revision
+        fi
+        echo "adapter_revision: $adapter_revision"
+        echo -n $adapter_revision > /tekton/results/adapterRevision
+
+        # Extract design patterns as a comma-separated line
+        adapters=$(yq -r '.designPatterns[].pattern' $(params.qvsConfigPath) | tr '
+        ' ',' | sed 's/,$//')
+        echo "adapters: $adapters"
+        echo -n $adapters > /tekton/results/adapters
+      workingDir: $(workspaces.shared.path)/source
+    - env:
+        - name: VS_SECRETS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['pipeline.qmonus.net/secrets']
+      image: python
+      name: make-params-json
+      script: |-
+        #!/usr/bin/env python3
+        import json
+        import os
+        params = []
+        params.append({'name': 'pathToSharedSource', 'value': '$(workspaces.shared.path)/source/'})
+        params.append({'name': 'appName', 'value': '$(params.appName)'})
+        params.append({'name': 'gcpProjectId', 'value': '$(params.gcpProjectId)'})
+        params.append({'name': 'gcpFirebaseHostingSiteId', 'value': '$(params.gcpFirebaseHostingSiteId)'})
+        params.append({'name': 'gcpFirebaseHostingCustomDomainName', 'value': '$(params.gcpFirebaseHostingCustomDomainName)'})
+        params.append({'name': 'gcpDnsManagedZoneName', 'value': '$(params.gcpDnsManagedZoneName)'})
+        vs_secrets = os.environ.get('VS_SECRETS')
+        secrets = json.loads(vs_secrets) if vs_secrets else []
+        print(json.dumps({'params': params, 'secrets': secrets}, indent=4))
+        open('$(workspaces.shared.path)/params.json', 'w').write(json.dumps({'params': params, 'secrets': secrets}, indent=4))
+      workingDir: $(workspaces.shared.path)/source/$(params.pathToSource)
+    - args:
+        - manifest
+        - compile
+        - -o
+        - $(workspaces.shared.path)/manifests/pulumi/Pulumi.yaml
+        - -c
+        - $(params.qvsConfigPath)
+        - -p
+        - $(workspaces.shared.path)/params.json
+        - --output-format
+        - pulumi
+      env:
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: $(params.gitTokenSecretName)
+        - name: TMPDIR
+          value: /tmpdir
+        - name: QVSCTL_SKIP_UPDATE_CHECK
+          value: "true"
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/qvsctl:v0.14.0
+      name: compile-app
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: "1"
+          memory: 512Mi
+      volumeMounts:
+        - mountPath: /tmpdir
+          name: tmpdir
+      workingDir: $(workspaces.shared.path)/source/$(params.pathToSource)
+  volumes:
+    - emptyDir: {}
+      name: tmpdir
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml
+spec:
+  params:
+    - description: Application Name of QmonusVS
+      name: appName
+    - description: Deployment Name of QmonusVS
+      name: qvsDeploymentName
+    - default: app
+      description: Used as pulumi-stack name suffix
+      name: deployStateName
+    - description: The secret name of GCP SA credential
+      name: gcpServiceAccountSecretName
+  steps:
+    - env:
+        - name: VS_API_ENDPOINT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['vs.axis-dev.io/api-endpoint']
+      image: google/cloud-sdk:365.0.1-slim@sha256:2575543b18e06671eac29aae28741128acfd0e4376257f3f1246d97d00059dcb
+      name: download-state
+      script: |
+        #!/usr/bin/env bash
+        set -o nounset
+        set -o xtrace
+        set -o pipefail
+
+        mkdir -p '$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)'
+        cd '$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)'
+        if [[ -d .pulumi ]]; then
+          exit 0
+        fi
+        SIGNED_URL=`curl -X POST -fs ${VS_API_ENDPOINT}'/apis/v1/projects/$(context.taskRun.namespace)/applications/$(params.appName)/deployments/$(params.qvsDeploymentName)/deploy-state/$(params.deployStateName)/action/signed-url-to-get?taskrun_name=$(context.taskRun.name)&taskrun_uid=$(context.taskRun.uid)' | xargs`
+        mkdir -p /tekton/home/pulumi/old
+        STATUS=`curl -fs ${SIGNED_URL} -o /tekton/home/pulumi/old/state.tgz -w '%{http_code}\n'`
+        if [ ! -z $STATUS ] && [ $STATUS -eq 404 ]; then
+          echo "No state file is provided. Create a new state."
+          exit 0
+        elif [ -z $STATUS ] || [ $STATUS -ne 200 ]; then
+          echo "Error: failed to download state file."
+          exit 1
+        fi
+        if [ -f /tekton/home/pulumi/old/state.tgz ]; then
+          tar xzvf /tekton/home/pulumi/old/state.tgz
+        else
+          echo "Error: status_code is 200 but no state file is provided."
+          exit 1
+        fi
+      workingDir: /opt
+    - env:
+        - name: PULUMI_BACKEND_URL
+          value: file://$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)
+        - name: PULUMI_CONFIG_PASSPHRASE
+          valueFrom:
+            secretKeyRef:
+              key: passphrase
+              name: qmonus-pulumi-secret
+        - name: GOOGLE_CREDENTIALS
+          value: /secret/gcp/account.json
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/pulumi-patched:b0b3476344217201659193136b1a261f15a25a2c
+      name: display-deploy-resources-overview
+      resources:
+        limits:
+          cpu: "1"
+          memory: 2Gi
+        requests:
+          cpu: "1"
+          memory: 2Gi
+      script: |-
+        #!/usr/bin/env bash
+        if [ -e preview_list.txt ]; then
+        	rm preview_list.txt
+        fi
+        pulumi login ${PULUMI_BACKEND_URL} &> /dev/null
+        pulumi stack select --create $(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)  &> /dev/null
+        PULUMI_PREVIEW=`pulumi preview -r --stack $(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName) -j --show-sames`
+        PULUMI_PREVIEW_ERROR=`[[ $? != 0 ]] && echo true || echo false`
+        echo $PULUMI_PREVIEW | jq -c '.steps[] | {action:.op, urn:.urn}' > tmp_preview_list.txt
+        if [ ! -s "tmp_preview_list.txt" ]; then
+          echo 'error: invalid Pulumi.yaml.'
+          echo 'error: faild to run "pulumi preview".'
+          exit 1
+        fi
+        DIAGNOSTICS=`echo $PULUMI_PREVIEW | jq -c '.diagnostics // empty'`
+        if "$PULUMI_PREVIEW_ERROR"; then
+          echo "error: faild to run "pulumi preview"."
+          echo -e '\nDiagnostics:'
+          echo $DIAGNOSTICS | jq -cr '.[] | .message'
+          exit 1
+        fi
+        while read -r PREVIEW; do
+          URN=$(echo "${PREVIEW}" | jq -r '.urn')
+          if grep -q "pulumi:pulumi:Stack" <<< "$URN"; then
+            continue
+          fi
+          ACTION=$(echo "${PREVIEW}" | jq -r '.action')
+          if [ "$ACTION" = "same" ]; then ACTION="unchanged"; fi
+          SPLIT_URN=(${URN//::/ })
+          echo ${SPLIT_URN[2]} ${SPLIT_URN[3]} ${ACTION}
+          echo "$PREVIEW" >> preview_list.txt
+        done < tmp_preview_list.txt
+        if [ ! -s "preview_list.txt" ]; then echo "no resources."; fi
+        pulumi stack export 2> /dev/null | jq -c '.deployment.resources[]?' > resources_before_deploy.txt
+        if [ -n "$DIAGNOSTICS" ]; then
+          echo -e '\nDiagnostics:'
+          echo $DIAGNOSTICS | jq -cr '.[] | .message'
+        fi
+      volumeMounts:
+        - mountPath: /secret/gcp
+          name: gcp-secret
+          readOnly: true
+      workingDir: $(workspaces.shared.path)/manifests/pulumi/
+    - env:
+        - name: PULUMI_BACKEND_URL
+          value: file://$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)
+        - name: PULUMI_CONFIG_PASSPHRASE
+          valueFrom:
+            secretKeyRef:
+              key: passphrase
+              name: qmonus-pulumi-secret
+        - name: GOOGLE_CREDENTIALS
+          value: /secret/gcp/account.json
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/pulumi-patched:b0b3476344217201659193136b1a261f15a25a2c
+      name: deploy
+      onError: continue
+      resources:
+        limits:
+          cpu: "1"
+          memory: 2Gi
+        requests:
+          cpu: "1"
+          memory: 2Gi
+      script: |-
+        #!/usr/bin/env bash
+        set -o nounset
+        set -o xtrace
+        if [ -n "${GOOGLE_CREDENTIALS:-}" ]; then gcloud auth activate-service-account --key-file=${GOOGLE_CREDENTIALS}; fi
+        pulumi login ${PULUMI_BACKEND_URL}
+        pulumi stack select --create $(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)
+        pulumi up -y -r --stack $(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)
+      volumeMounts:
+        - mountPath: /secret/gcp
+          name: gcp-secret
+          readOnly: true
+      workingDir: $(workspaces.shared.path)/manifests/pulumi/
+    - env:
+        - name: PULUMI_BACKEND_URL
+          value: file://$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)
+        - name: PULUMI_CONFIG_PASSPHRASE
+          valueFrom:
+            secretKeyRef:
+              key: passphrase
+              name: qmonus-pulumi-secret
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/pulumi-patched:b0b3476344217201659193136b1a261f15a25a2c
+      name: display-deploy-result-overview
+      onError: continue
+      script: |-
+        #!/usr/bin/env bash
+        if [ ! -s "preview_list.txt" ]; then
+          echo 'no difference.'
+          exit 0
+        fi
+        pulumi login ${PULUMI_BACKEND_URL} &> /dev/null
+        pulumi stack select $(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)  &> /dev/null
+        pulumi stack export 2> /dev/null | jq -c '.deployment.resources[]' > resources_after_deploy.txt
+        RESOURCES_BEFORE_DEPLOY=`cat resources_before_deploy.txt`
+        RESOURCES_AFTER_DEPLOY=`cat resources_after_deploy.txt`
+        while read -r PREVIEW; do
+          ACTION=$(echo "${PREVIEW}" | jq -r '.action')
+          URN=$(echo "${PREVIEW}" | jq -r '.urn')
+          RESULT="failed"
+          case "$ACTION" in
+            create)
+              AFTER_DEPLOY=`echo $RESOURCES_AFTER_DEPLOY | jq -r "select(.urn == \"$URN\")"`
+              if [ -n "$AFTER_DEPLOY" ]; then RESULT="created"; fi ;;
+            update)
+              BEFORE_UPDATE=`echo $RESOURCES_BEFORE_DEPLOY | jq -r "select(.urn == \"$URN\") | .modified"`
+              AFTER_UPDATE=`echo $RESOURCES_AFTER_DEPLOY | jq -r "select(.urn == \"$URN\") | .modified"`
+              if [ "$BEFORE_UPDATE" != "$AFTER_UPDATE" ]; then RESULT="updated"; fi ;;
+            replace)
+              BEFORE_REPLACE=`echo $RESOURCES_BEFORE_DEPLOY | jq -r "select(.urn == \"$URN\") | .created"`
+              AFTER_REPLACE=`echo $RESOURCES_AFTER_DEPLOY | jq -r "select(.urn == \"$URN\") | .created"`
+              if [ "$BEFORE_REPLACE" != "$AFTER_REPLACE" ]; then RESULT="replaced"; fi ;;
+            delete)
+              AFTER_DEPLOY=`echo $RESOURCES_AFTER_DEPLOY | jq -r "select(.urn == \"$URN\")"`
+              if [ -z "$AFTER_DEPLOY" ]; then RESULT="deleted"; fi ;;
+            same)
+              RESULT="unchanged"
+          esac
+          SPLIT_URN=(${URN//::/ })
+          echo ${SPLIT_URN[2]} ${SPLIT_URN[3]} ${RESULT}
+        done < preview_list.txt
+      workingDir: $(workspaces.shared.path)/manifests/pulumi/
+    - env:
+        - name: VS_API_ENDPOINT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['vs.axis-dev.io/api-endpoint']
+      image: google/cloud-sdk:365.0.1-slim@sha256:2575543b18e06671eac29aae28741128acfd0e4376257f3f1246d97d00059dcb
+      name: upload-state
+      script: |
+        #!/usr/bin/env bash
+        set -o nounset
+        set -o xtrace
+        set -o pipefail
+
+        cd '$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)'
+        mkdir -p /tekton/home/pulumi/new
+        tar czvf /tekton/home/pulumi/new/state.tgz .pulumi
+        for i in $(seq 1 5); do
+          SIGNED_URL=`curl -X POST -fs ${VS_API_ENDPOINT}'/apis/v1/projects/$(context.taskRun.namespace)/applications/$(params.appName)/deployments/$(params.qvsDeploymentName)/deploy-state/$(params.deployStateName)/action/signed-url-to-put?taskrun_name=$(context.taskRun.name)&taskrun_uid=$(context.taskRun.uid)' | xargs`
+          STATUS=`curl -X PUT -fs ${SIGNED_URL} --upload-file /tekton/home/pulumi/new/state.tgz -w '%{http_code}\n'`
+          if [ ! -z $STATUS ] && [ $STATUS -eq 200 ]; then
+            break
+          fi
+          if [ $i -eq 5 ]; then
+            echo "Error: failed to upload new state file."
+            exit 1
+          fi
+          sleep 10
+        done
+        if [ $(cat $(steps.step-deploy.exitCode.path)) -ne 0 ]; then
+          echo "Error: new state file is uploaded, but step-deploy is failed."
+          exit 1
+        fi
+      workingDir: /opt
+  volumes:
+    - name: gcp-secret
+      secret:
+        items:
+          - key: serviceaccount
+            path: account.json
+        secretName: $(params.gcpServiceAccountSecretName)
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: iacs-555-gcp-frontend-generate-environment-variables-file
+spec:
+  params:
+    - description: Path to QVS Config
+      name: qvsConfigPath
+    - description: Parameter used in QVS Config
+      name: appName
+    - description: Parameter used in QVS Config
+      name: gcpProjectId
+    - description: Parameter used in QVS Config
+      name: gcpFirebaseHostingSiteId
+    - description: Parameter used in QVS Config
+      name: gcpFirebaseHostingCustomDomainName
+    - description: Parameter used in QVS Config
+      name: gcpDnsManagedZoneName
+  steps:
+    - image: linuxserver/yq:3.2.3
+      name: check-env
+      script: |-
+        QVS_JSON=`cat $(params.qvsConfigPath) | yq`			
+        ENVS=`echo ${QVS_JSON} | jq -c ".designPatterns[] | .params.environmentVariables // empty"`
+        ENV_FILE_DIR="$(workspaces.shared.path)/env"
+        ENV_SET_NAME="env_set.txt"
+
+        if [ -z "$ENVS" ]; then
+          echo "no environment variables."
+          exit 0
+        fi
+
+        echo "found `echo $ENVS | jq 'to_entries | length'` environment variables."
+        mkdir -p $ENV_FILE_DIR
+        echo $ENVS | jq  -c 'to_entries | .[]' > ${ENV_FILE_DIR}/${ENV_SET_NAME}
+      workingDir: $(workspaces.shared.path)/source/
+    - image: python
+      name: make-params-json
+      script: |-
+        #!/usr/bin/env python3
+        import json
+        import os
+        import sys
+        params = []
+        if not os.path.isfile('$(workspaces.shared.path)/env/env_set.txt'):
+          print('skip making params.json.')
+          sys.exit()
+        params.append({'name': 'appName', 'value': '$(params.appName)'})
+        params.append({'name': 'gcpProjectId', 'value': '$(params.gcpProjectId)'})
+        params.append({'name': 'gcpFirebaseHostingSiteId', 'value': '$(params.gcpFirebaseHostingSiteId)'})
+        params.append({'name': 'gcpFirebaseHostingCustomDomainName', 'value': '$(params.gcpFirebaseHostingCustomDomainName)'})
+        params.append({'name': 'gcpDnsManagedZoneName', 'value': '$(params.gcpDnsManagedZoneName)'})
+        print(json.dumps({'params': params}, indent=4))
+        open('$(workspaces.shared.path)/params.json', 'w').write(json.dumps({'params': params}, indent=4))
+      workingDir: $(workspaces.shared.path)/source/
+    - image: linuxserver/yq:3.2.3
+      name: generate-env-file
+      script: "ENV_FILE_PATH=\"$(workspaces.shared.path)/env/environment_variables.sh\"\nENV_SET_PATH=\"$(workspaces.shared.path)/env/env_set.txt\"\n\nif [ ! -e $ENV_SET_PATH ]; then\n  echo \"skip generating env file\"\n\texit 0\nfi\n\nif [ -e $ENV_FILE_PATH ]; then\n  rm $ENV_FILE_PATH\nfi\n\nPARAMS_JSON_PATH=\"$(workspaces.shared.path)/params.json\"\n\nwhile read -r ENV; do\n  _KEY=`echo $ENV | jq -r '.key'`\n  _PARAM=`echo $ENV | jq -r  '.value'`\n  case $_PARAM in\n    '$''(params.'*')')\n      _PARAM_NAME=$(echo $_PARAM | cut -c 10-$(expr ${#_PARAM} - 1))\n      _VALUE=$(cat $PARAMS_JSON_PATH | jq -c \".params[] | select(.name == \\\"$_PARAM_NAME\\\") | .value\")\n      echo export ${_KEY}=${_VALUE} >> $ENV_FILE_PATH;;\n    *)\n      echo export ${_KEY}=${_PARAM} >> $ENV_FILE_PATH;;\n  esac\ndone < ${ENV_SET_PATH}\n\necho \"successfully created a env file.\" "
+      workingDir: $(workspaces.shared.path)/source/
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: iacs-555-gcp-frontend-build-gcp-firebase-hosting
+spec:
+  params:
+    - default: .
+      description: The path to the frontend build working directory
+      name: buildTargetDir
+  steps:
+    - args:
+        - install
+      command:
+        - yarn
+      image: node:18-alpine3.19
+      name: install-dependencies
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: "1"
+          memory: 512Mi
+      workingDir: $(workspaces.shared.path)/source/$(params.buildTargetDir)
+    - image: node:18-alpine3.19
+      name: build
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: "1"
+          memory: 512Mi
+      script: |-
+        #!/bin/bash
+        ENV_FILE_PATH="$(workspaces.shared.path)/env/environment_variables.sh"
+        if [ -e  $ENV_FILE_PATH ]; then
+          echo "set environment variables."
+          source $ENV_FILE_PATH
+        fi
+
+        yarn build
+      workingDir: $(workspaces.shared.path)/source/$(params.buildTargetDir)
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: iacs-555-gcp-frontend-deploy-gcp-firebase-hosting
+spec:
+  params:
+    - description: Application Name of QmonusVS
+      name: appName
+    - default: .
+      description: The path to the frontend build working directory
+      name: buildTargetDir
+    - default: dist
+      description: The path to the frontend deploy working directory
+      name: deployTargetDir
+    - description: Firebase Hosting Site ID
+      name: gcpFirebaseHostingSiteId
+    - description: GCP Project ID
+      name: gcpProjectId
+    - description: The secret name of GCP SA credential
+      name: gcpServiceAccountSecretName
+  steps:
+    - env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secret/account.json
+        - name: GCP_PROJECT_ID
+          value: $(params.gcpProjectId)
+        - name: DEPLOY_TARGET_DIR
+          value: $(params.deployTargetDir)
+        - name: FIREBASE_HOSTING_SITE_ID
+          value: $(params.gcpFirebaseHostingSiteId)
+      image: asia-northeast1-docker.pkg.dev/solarray-nod-06173976/iacs-demo/iacs-555-firebase-tools:latest
+      name: deploy
+      script: |-
+        #!/usr/bin/env bash
+        echo "{"projects": {"default": ${GCP_PROJECT_ID}}, "targets": {${GCP_PROJECT_ID}: {"hosting": {${FIREBASE_HOSTING_SITE_ID}: [${FIREBASE_HOSTING_SITE_ID}]}}},"etags": {}}" > .firebaserc
+        echo "{ "hosting": {"target": ${FIREBASE_HOSTING_SITE_ID}, "public": ${DEPLOY_TARGET_DIR}, "ignore": ["firebase.json", "**/.*", "**/node_modules/**"] } }"  > firebase.json
+        firebase deploy --only hosting:${FIREBASE_HOSTING_SITE_ID}
+      volumeMounts:
+        - mountPath: /secret
+          name: user-gcp-secret
+          readOnly: true
+      workingDir: $(workspaces.shared.path)/source/$(params.buildTargetDir)
+  volumes:
+    - name: user-gcp-secret
+      secret:
+        items:
+          - key: serviceaccount
+            path: account.json
+        secretName: $(params.gcpServiceAccountSecretName)
+  workspaces:
+    - name: shared
