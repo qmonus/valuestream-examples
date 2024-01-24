@@ -7,7 +7,9 @@ params:
     type: string
   - name: gcpFirebaseHostingCustomDomainName
     type: string
-  - name: gcpDnsManagedZoneName
+  - name: dnsZoneName
+    type: string
+  - name: dnsZoneProjectId
     type: string
 
 modules:
@@ -17,11 +19,11 @@ modules:
       revision: IACS-555_add-gcp-frontend-adapter
 
 designPatterns:
-  - pattern: qmonus.net/adapter/official/adapters/gcp/serverless/staticSite/frontend  
-    params:
-      appName: $(params.appName)
-      gcpProjectId: $(params.gcpProjectId)
-      gcpDnsManagedZoneProjectId: $(params.gcpDnsManagedZoneProjectId)
-      gcpFirebaseHostingSiteId: $(params.gcpFirebaseHostingSiteId)
-      gcpFirebaseHostingCustomDomainName: $(params.gcpFirebaseHostingCustomDomainName)
-      gcpDnsManagedZoneName: $(params.gcpDnsManagedZoneName)
+#   - pattern: qmonus.net/adapter/official/adapters/gcp/serverless/staticSite/frontend  
+#     params:
+#       appName: $(params.appName)
+#       gcpProjectId: $(params.gcpProjectId)
+#       gcpFirebaseHostingSiteId: $(params.gcpFirebaseHostingSiteId)
+#       gcpFirebaseHostingCustomDomainName: $(params.gcpFirebaseHostingCustomDomainName)
+#       dnsZoneName: $(params.dnsZoneName)
+#       dnsZoneProjectId: $(params.dnsZoneProjectId)

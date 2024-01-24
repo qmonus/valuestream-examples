@@ -36,7 +36,9 @@ spec:
     - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
       name: gcpFirebaseHostingCustomDomainName
     - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
-      name: gcpDnsManagedZoneName
+      name: dnsZoneName
+    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+      name: dnsZoneProjectId
     - description: 'iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: Deployment Name of QmonusVS'
       name: qvsDeploymentName
     - default: app
@@ -88,8 +90,10 @@ spec:
           value: $(params.gcpFirebaseHostingSiteId)
         - name: gcpFirebaseHostingCustomDomainName
           value: $(params.gcpFirebaseHostingCustomDomainName)
-        - name: gcpDnsManagedZoneName
-          value: $(params.gcpDnsManagedZoneName)
+        - name: dnsZoneName
+          value: $(params.dnsZoneName)
+        - name: dnsZoneProjectId
+          value: $(params.dnsZoneProjectId)
       runAfter:
         - checkout
       taskRef:
@@ -141,29 +145,42 @@ spec:
       name: qvsConfigPath
     - description: |-
         iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
+        iacs-555-gcp-frontend-get-url-gcp-firebase-hosting: Application Name of QmonusVS
         iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: Application Name of QmonusVS
       name: appName
     - description: |-
         iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
         iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: GCP Project ID
       name: gcpProjectId
-    - description: |-
-        iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
-        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: Firebase Hosting Site ID
+    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
       name: gcpFirebaseHostingSiteId
     - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
       name: gcpFirebaseHostingCustomDomainName
     - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
-      name: gcpDnsManagedZoneName
+      name: dnsZoneName
+    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+      name: dnsZoneProjectId
     - description: |-
         iacs-555-gcp-frontend-build-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
         iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
       name: buildTargetDir
+    - description: 'iacs-555-gcp-frontend-get-url-gcp-firebase-hosting: Deployment Name of QmonusVS'
+      name: qvsDeploymentName
+    - default: app
+      description: 'iacs-555-gcp-frontend-get-url-gcp-firebase-hosting: Used as pulumi-stack name suffix (default: app)'
+      name: deployStateName
     - default: dist
       description: 'iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The path to the frontend deploy working directory (default: dist)'
       name: deployTargetDir
     - description: 'iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The secret name of GCP SA credential'
       name: gcpServiceAccountSecretName
+  results:
+    - description: Firebase Hosting default domain url
+      name: defaultDomain
+      value: $(tasks.get-url-gcp-firebase-hosting.results.defaultDomain)
+    - description: Firebase Hosting custom domain url
+      name: customDomain
+      value: $(tasks.get-url-gcp-firebase-hosting.results.customDomain)
   tasks:
     - name: checkout
       params:
@@ -182,7 +199,7 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: generate-env-file
+    - name: generate-environment-variables-file
       params:
         - name: qvsConfigPath
           value: $(params.qvsConfigPath)
@@ -194,8 +211,10 @@ spec:
           value: $(params.gcpFirebaseHostingSiteId)
         - name: gcpFirebaseHostingCustomDomainName
           value: $(params.gcpFirebaseHostingCustomDomainName)
-        - name: gcpDnsManagedZoneName
-          value: $(params.gcpDnsManagedZoneName)
+        - name: dnsZoneName
+          value: $(params.dnsZoneName)
+        - name: dnsZoneProjectId
+          value: $(params.dnsZoneProjectId)
       runAfter:
         - checkout
       taskRef:
@@ -203,18 +222,33 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: build
+    - name: build-gcp-firebase-hosting
       params:
         - name: buildTargetDir
           value: $(params.buildTargetDir)
       runAfter:
-        - generate-env-file
+        - generate-environment-variables-file
       taskRef:
         name: iacs-555-gcp-frontend-build-gcp-firebase-hosting
       workspaces:
         - name: shared
           workspace: shared
-    - name: deploy
+    - name: get-url-gcp-firebase-hosting
+      params:
+        - name: appName
+          value: $(params.appName)
+        - name: qvsDeploymentName
+          value: $(params.qvsDeploymentName)
+        - name: deployStateName
+          value: $(params.deployStateName)
+      runAfter:
+        - build-gcp-firebase-hosting
+      taskRef:
+        name: iacs-555-gcp-frontend-get-url-gcp-firebase-hosting
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: deploy-gcp-firebase-hosting
       params:
         - name: appName
           value: $(params.appName)
@@ -222,14 +256,12 @@ spec:
           value: $(params.buildTargetDir)
         - name: deployTargetDir
           value: $(params.deployTargetDir)
-        - name: gcpFirebaseHostingSiteId
-          value: $(params.gcpFirebaseHostingSiteId)
         - name: gcpProjectId
           value: $(params.gcpProjectId)
         - name: gcpServiceAccountSecretName
           value: $(params.gcpServiceAccountSecretName)
       runAfter:
-        - build
+        - get-url-gcp-firebase-hosting
       taskRef:
         name: iacs-555-gcp-frontend-deploy-gcp-firebase-hosting
       workspaces:
@@ -333,7 +365,9 @@ spec:
     - description: Parameter used in QVS Config
       name: gcpFirebaseHostingCustomDomainName
     - description: Parameter used in QVS Config
-      name: gcpDnsManagedZoneName
+      name: dnsZoneName
+    - description: Parameter used in QVS Config
+      name: dnsZoneProjectId
   results:
     - description: Adapter module
       name: module
@@ -408,7 +442,8 @@ spec:
         params.append({'name': 'gcpProjectId', 'value': '$(params.gcpProjectId)'})
         params.append({'name': 'gcpFirebaseHostingSiteId', 'value': '$(params.gcpFirebaseHostingSiteId)'})
         params.append({'name': 'gcpFirebaseHostingCustomDomainName', 'value': '$(params.gcpFirebaseHostingCustomDomainName)'})
-        params.append({'name': 'gcpDnsManagedZoneName', 'value': '$(params.gcpDnsManagedZoneName)'})
+        params.append({'name': 'dnsZoneName', 'value': '$(params.dnsZoneName)'})
+        params.append({'name': 'dnsZoneProjectId', 'value': '$(params.dnsZoneProjectId)'})
         vs_secrets = os.environ.get('VS_SECRETS')
         secrets = json.loads(vs_secrets) if vs_secrets else []
         print(json.dumps({'params': params, 'secrets': secrets}, indent=4))
@@ -435,7 +470,7 @@ spec:
           value: /tmpdir
         - name: QVSCTL_SKIP_UPDATE_CHECK
           value: "true"
-      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/qvsctl:v0.14.0
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/qvsctl:v0.15.0
       name: compile-app
       resources:
         limits:
@@ -529,6 +564,7 @@ spec:
         if [ -e preview_list.txt ]; then
         	rm preview_list.txt
         fi
+        if [ -n "${GOOGLE_CREDENTIALS}" ]; then gcloud auth activate-service-account --key-file=${GOOGLE_CREDENTIALS}; fi
         pulumi login ${PULUMI_BACKEND_URL} &> /dev/null
         pulumi stack select --create $(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)  &> /dev/null
         PULUMI_PREVIEW=`pulumi preview -r --stack $(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName) -j --show-sames`
@@ -709,7 +745,9 @@ spec:
     - description: Parameter used in QVS Config
       name: gcpFirebaseHostingCustomDomainName
     - description: Parameter used in QVS Config
-      name: gcpDnsManagedZoneName
+      name: dnsZoneName
+    - description: Parameter used in QVS Config
+      name: dnsZoneProjectId
   steps:
     - image: linuxserver/yq:3.2.3
       name: check-env
@@ -743,7 +781,8 @@ spec:
         params.append({'name': 'gcpProjectId', 'value': '$(params.gcpProjectId)'})
         params.append({'name': 'gcpFirebaseHostingSiteId', 'value': '$(params.gcpFirebaseHostingSiteId)'})
         params.append({'name': 'gcpFirebaseHostingCustomDomainName', 'value': '$(params.gcpFirebaseHostingCustomDomainName)'})
-        params.append({'name': 'gcpDnsManagedZoneName', 'value': '$(params.gcpDnsManagedZoneName)'})
+        params.append({'name': 'dnsZoneName', 'value': '$(params.dnsZoneName)'})
+        params.append({'name': 'dnsZoneProjectId', 'value': '$(params.dnsZoneProjectId)'})
         print(json.dumps({'params': params}, indent=4))
         open('$(workspaces.shared.path)/params.json', 'w').write(json.dumps({'params': params}, indent=4))
       workingDir: $(workspaces.shared.path)/source/
@@ -778,7 +817,7 @@ spec:
           cpu: "1"
           memory: 512Mi
       workingDir: $(workspaces.shared.path)/source/$(params.buildTargetDir)
-    - image: node:18-alpine3.19
+    - image: node:18.19.0-bookworm
       name: build
       resources:
         limits:
@@ -796,7 +835,64 @@ spec:
         fi
 
         yarn build
+      securityContext:
+        runAsUser: 0
       workingDir: $(workspaces.shared.path)/source/$(params.buildTargetDir)
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: iacs-555-gcp-frontend-get-url-gcp-firebase-hosting
+spec:
+  params:
+    - description: Application Name of QmonusVS
+      name: appName
+    - description: Deployment Name of QmonusVS
+      name: qvsDeploymentName
+    - default: app
+      description: Used as pulumi-stack name suffix
+      name: deployStateName
+  results:
+    - description: Firebase Hosting default domain url
+      name: defaultDomain
+    - description: Firebase Hosting custom domain url
+      name: customDomain
+  steps:
+    - image: python:3.12-alpine3.19
+      name: get-domains
+      script: |-
+        #!/usr/bin/env python3
+        import json
+        import sys
+
+        with open('$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)/.pulumi/stacks/local/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName).json') as f:
+            stack = json.load(f)
+
+        for resource in stack['checkpoint']['latest']['resources']:
+            if resource['type'] == 'gcp:firebase/hostingSite:HostingSite':
+                f = open('siteId', 'w')
+                f.write(resource['outputs']['siteId'])
+                f.close()
+                f = open('/tekton/results/defaultDomain', 'w')
+                f.write('https://' + resource['outputs']['siteId'] + '.web.app')
+                f.close()
+                print('siteId: "' + resource['outputs']['siteId'] + '" was saved successfully.')
+                break
+        else:
+            print('Could not find "gcp.firebase.HostingSite" resource in pulumi stack.')
+
+        for resource in stack['checkpoint']['latest']['resources']:
+            if resource['type'] == 'gcp:firebase/hostingCustomDomain:HostingCustomDomain':
+                f = open('/tekton/results/customDomain', 'w')
+                f.write('https://' + resource['outputs']['customDomain'])
+                f.close()
+                print('customDomain: "' + resource['outputs']['customDomain'] + '" was saved successfully.')
+                break
+        else:
+            print('Could not find "gcp:firebase/hostingCustomDomain:HostingCustomDomain" resource in pulumi stack.')
+      workingDir: $(workspaces.shared.path)
   workspaces:
     - name: shared
 ---
@@ -814,29 +910,33 @@ spec:
     - default: dist
       description: The path to the frontend deploy working directory
       name: deployTargetDir
-    - description: Firebase Hosting Site ID
-      name: gcpFirebaseHostingSiteId
     - description: GCP Project ID
       name: gcpProjectId
     - description: The secret name of GCP SA credential
       name: gcpServiceAccountSecretName
   steps:
     - env:
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /secret/account.json
         - name: GCP_PROJECT_ID
           value: $(params.gcpProjectId)
         - name: DEPLOY_TARGET_DIR
           value: $(params.deployTargetDir)
-        - name: FIREBASE_HOSTING_SITE_ID
-          value: $(params.gcpFirebaseHostingSiteId)
-      image: asia-northeast1-docker.pkg.dev/solarray-nod-06173976/iacs-demo/iacs-555-firebase-tools:latest
+      image: bash:5.2-alpine3.19
+      name: make-configration-files
+      script: |-
+        #!/usr/bin/env bash
+        FIREBASE_HOSTING_SITE_ID=$(cat $(workspaces.shared.path)/siteId)
+        echo '{"projects": {"default": "'$GCP_PROJECT_ID'"}, "targets": {"'$GCP_PROJECT_ID'": {"hosting": {"'$FIREBASE_HOSTING_SITE_ID'": ["'$FIREBASE_HOSTING_SITE_ID'"]}}},"etags": {}}' > .firebaserc
+        echo '{"hosting": [{"target": "'$FIREBASE_HOSTING_SITE_ID'", "public": "'$DEPLOY_TARGET_DIR'", "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]}]}' > firebase.json
+      workingDir: $(workspaces.shared.path)/source/$(params.buildTargetDir)
+    - env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secret/account.json
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/firebase-tools:2024.01.29
       name: deploy
       script: |-
         #!/usr/bin/env bash
-        echo "{"projects": {"default": ${GCP_PROJECT_ID}}, "targets": {${GCP_PROJECT_ID}: {"hosting": {${FIREBASE_HOSTING_SITE_ID}: [${FIREBASE_HOSTING_SITE_ID}]}}},"etags": {}}" > .firebaserc
-        echo "{ "hosting": {"target": ${FIREBASE_HOSTING_SITE_ID}, "public": ${DEPLOY_TARGET_DIR}, "ignore": ["firebase.json", "**/.*", "**/node_modules/**"] } }"  > firebase.json
-        firebase deploy --only hosting:${FIREBASE_HOSTING_SITE_ID}
+        FIREBASE_HOSTING_SITE_ID=$(cat $(workspaces.shared.path)/siteId)
+        firebase deploy --only hosting:"${FIREBASE_HOSTING_SITE_ID}"
       volumeMounts:
         - mountPath: /secret
           name: user-gcp-secret

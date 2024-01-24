@@ -10,20 +10,27 @@ spec:
     - name: iacs-555-gcp-frontend-deploy
       spec:
         deployment:
-          app: todo-app-frontend
-          name: gcp-todo-app-frontend
+          app: iacs-555-gcp-frontend-deploy
+          name: iacs-555-gcp-frontend-deploy
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
-        pipeline: todo-app-frontend-deploy
+        pipeline: iacs-555-gcp-frontend-deploy
     - name: iacs-555-gcp-frontend-publish-site
       spec:
         deployment:
-          app: todo-app-frontend
-          name: gcp-todo-app-frontend
+          app: iacs-555-gcp-frontend-deploy
+          name: iacs-555-gcp-frontend-deploy
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
-        pipeline: todo-app-frontend-publish-site
+        pipeline: iacs-555-gcp-frontend-publish-site
       runAfter:
         - iacs-555-gcp-frontend-deploy
+  artifacts:
+    - path: ./
+  results:
+    - name: defaultDomain
+      value: $(stages.iacs-555-gcp-frontend-publish-site.results.defaultDomain)
+    - name: customDomain
+      value: $(stages.iacs-555-gcp-frontend-publish-site.results.customDomain)
