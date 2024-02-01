@@ -1,32 +1,32 @@
 apiVersion: vs.axis-dev.io/v1
 kind: AssemblyLine
 metadata:
-  name: iacs-555-gcp-frontend-deploy
+  name: gcp-frontend-deploy
 spec:
   params:
     - name: gitRevision
       description: ""
   stages:
-    - name: iacs-555-gcp-frontend-deploy
+    - name: deploy
       spec:
         deployment:
-          app: iacs-555-gcp-frontend-deploy
-          name: iacs-555-gcp-frontend-deploy
+          app: gcp-frontend-application
+          name: gcp-frontend-deployment
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
-        pipeline: iacs-555-gcp-frontend-deploy
-    - name: iacs-555-gcp-frontend-publish-site
+        pipeline: deploy
+    - name: publish-site
       spec:
         deployment:
-          app: iacs-555-gcp-frontend-deploy
-          name: iacs-555-gcp-frontend-deploy
+          app: gcp-frontend-application
+          name: gcp-frontend-deployment
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
-        pipeline: iacs-555-gcp-frontend-publish-site
+        pipeline: publish-site
       runAfter:
-        - iacs-555-gcp-frontend-deploy
+        - deploy
   artifacts:
     - path: ./
   results:

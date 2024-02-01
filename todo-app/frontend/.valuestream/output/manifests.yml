@@ -3,48 +3,48 @@ kind: Pipeline
 metadata:
   annotations:
     vs.axis-dev.io/stage-type: deploy
-  name: iacs-555-gcp-frontend-deploy
+  name: deploy
 spec:
   params:
-    - description: 'iacs-555-gcp-frontend-git-checkout: URL of the GIT repository with https protocol'
+    - description: 'git-checkout: URL of the GIT repository with https protocol'
       name: gitCloneUrl
-    - description: 'iacs-555-gcp-frontend-git-checkout: Git source revision'
+    - description: 'git-checkout: Git source revision'
       name: gitRevision
     - default: "true"
-      description: 'iacs-555-gcp-frontend-git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
+      description: 'git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
       name: gitRepositoryDeleteExisting
     - default: ""
-      description: 'iacs-555-gcp-frontend-git-checkout: Subdirectory in the source directory to clone Git repository (default: "")'
+      description: 'git-checkout: Subdirectory in the source directory to clone Git repository (default: "")'
       name: gitCheckoutSubDirectory
     - description: |-
-        iacs-555-gcp-frontend-git-checkout: Git token sercret name
-        iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Git token sercret name
+        git-checkout: Git token sercret name
+        app-compile-adapter-into-pulumi-yaml: Git token sercret name
       name: gitTokenSecretName
     - default: ""
-      description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Relative path from source directory (default: "")'
+      description: 'app-compile-adapter-into-pulumi-yaml: Relative path from source directory (default: "")'
       name: pathToSource
-    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Path to QVS Config'
+    - description: 'app-compile-adapter-into-pulumi-yaml: Path to QVS Config'
       name: qvsConfigPath
     - description: |-
-        iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config
-        iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: Application Name of QmonusVS
+        app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config
+        app-deploy-by-pulumi-yaml: Application Name of QmonusVS
       name: appName
-    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+    - description: 'app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
       name: gcpProjectId
-    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+    - description: 'app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
       name: gcpFirebaseHostingSiteId
-    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+    - description: 'app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
       name: gcpFirebaseHostingCustomDomainName
-    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+    - description: 'app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
       name: dnsZoneName
-    - description: 'iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+    - description: 'app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
       name: dnsZoneProjectId
-    - description: 'iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: Deployment Name of QmonusVS'
+    - description: 'app-deploy-by-pulumi-yaml: Deployment Name of QmonusVS'
       name: qvsDeploymentName
     - default: app
-      description: 'iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: Used as pulumi-stack name suffix (default: app)'
+      description: 'app-deploy-by-pulumi-yaml: Used as pulumi-stack name suffix (default: app)'
       name: deployStateName
-    - description: 'iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml: The secret name of GCP SA credential'
+    - description: 'app-deploy-by-pulumi-yaml: The secret name of GCP SA credential'
       name: gcpServiceAccountSecretName
   results:
     - description: Adapter module
@@ -70,7 +70,7 @@ spec:
         - name: gitTokenSecretName
           value: $(params.gitTokenSecretName)
       taskRef:
-        name: iacs-555-gcp-frontend-git-checkout
+        name: git-checkout
       workspaces:
         - name: shared
           workspace: shared
@@ -97,7 +97,7 @@ spec:
       runAfter:
         - checkout
       taskRef:
-        name: iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml
+        name: app-compile-adapter-into-pulumi-yaml
       workspaces:
         - name: shared
           workspace: shared
@@ -114,7 +114,7 @@ spec:
       runAfter:
         - compile
       taskRef:
-        name: iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml
+        name: app-deploy-by-pulumi-yaml
       workspaces:
         - name: shared
           workspace: shared
@@ -126,53 +126,53 @@ kind: Pipeline
 metadata:
   annotations:
     vs.axis-dev.io/stage-type: publish-site
-  name: iacs-555-gcp-frontend-publish-site
+  name: publish-site
 spec:
   params:
-    - description: 'iacs-555-gcp-frontend-git-checkout: URL of the GIT repository with https protocol'
+    - description: 'git-checkout: URL of the GIT repository with https protocol'
       name: gitCloneUrl
-    - description: 'iacs-555-gcp-frontend-git-checkout: Git source revision'
+    - description: 'git-checkout: Git source revision'
       name: gitRevision
     - default: "true"
-      description: 'iacs-555-gcp-frontend-git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
+      description: 'git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
       name: gitRepositoryDeleteExisting
     - default: ""
-      description: 'iacs-555-gcp-frontend-git-checkout: Subdirectory in the source directory to clone Git repository (default: "")'
+      description: 'git-checkout: Subdirectory in the source directory to clone Git repository (default: "")'
       name: gitCheckoutSubDirectory
-    - description: 'iacs-555-gcp-frontend-git-checkout: Git token sercret name'
+    - description: 'git-checkout: Git token sercret name'
       name: gitTokenSecretName
-    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Path to QVS Config'
+    - description: 'generate-environment-variables-file: Path to QVS Config'
       name: qvsConfigPath
     - description: |-
-        iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
-        iacs-555-gcp-frontend-get-url-gcp-firebase-hosting: Application Name of QmonusVS
-        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: Application Name of QmonusVS
+        generate-environment-variables-file: Parameter used in QVS Config
+        get-url-gcp-firebase-hosting: Application Name of QmonusVS
+        deploy-gcp-firebase-hosting: Application Name of QmonusVS
       name: appName
     - description: |-
-        iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config
-        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: GCP Project ID
+        generate-environment-variables-file: Parameter used in QVS Config
+        deploy-gcp-firebase-hosting: GCP Project ID
       name: gcpProjectId
-    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+    - description: 'generate-environment-variables-file: Parameter used in QVS Config'
       name: gcpFirebaseHostingSiteId
-    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+    - description: 'generate-environment-variables-file: Parameter used in QVS Config'
       name: gcpFirebaseHostingCustomDomainName
-    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+    - description: 'generate-environment-variables-file: Parameter used in QVS Config'
       name: dnsZoneName
-    - description: 'iacs-555-gcp-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+    - description: 'generate-environment-variables-file: Parameter used in QVS Config'
       name: dnsZoneProjectId
     - description: |-
-        iacs-555-gcp-frontend-build-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
-        iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
+        build-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
+        deploy-gcp-firebase-hosting: The path to the frontend build working directory (default: .)
       name: buildTargetDir
-    - description: 'iacs-555-gcp-frontend-get-url-gcp-firebase-hosting: Deployment Name of QmonusVS'
+    - description: 'get-url-gcp-firebase-hosting: Deployment Name of QmonusVS'
       name: qvsDeploymentName
     - default: app
-      description: 'iacs-555-gcp-frontend-get-url-gcp-firebase-hosting: Used as pulumi-stack name suffix (default: app)'
+      description: 'get-url-gcp-firebase-hosting: Used as pulumi-stack name suffix (default: app)'
       name: deployStateName
     - default: dist
-      description: 'iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The path to the frontend deploy working directory (default: dist)'
+      description: 'deploy-gcp-firebase-hosting: The path to the frontend deploy working directory (default: dist)'
       name: deployTargetDir
-    - description: 'iacs-555-gcp-frontend-deploy-gcp-firebase-hosting: The secret name of GCP SA credential'
+    - description: 'deploy-gcp-firebase-hosting: The secret name of GCP SA credential'
       name: gcpServiceAccountSecretName
   results:
     - description: Firebase Hosting default domain url
@@ -195,7 +195,7 @@ spec:
         - name: gitTokenSecretName
           value: $(params.gitTokenSecretName)
       taskRef:
-        name: iacs-555-gcp-frontend-git-checkout
+        name: git-checkout
       workspaces:
         - name: shared
           workspace: shared
@@ -218,7 +218,7 @@ spec:
       runAfter:
         - checkout
       taskRef:
-        name: iacs-555-gcp-frontend-generate-environment-variables-file
+        name: generate-environment-variables-file
       workspaces:
         - name: shared
           workspace: shared
@@ -229,7 +229,7 @@ spec:
       runAfter:
         - generate-environment-variables-file
       taskRef:
-        name: iacs-555-gcp-frontend-build-gcp-firebase-hosting
+        name: build-gcp-firebase-hosting
       workspaces:
         - name: shared
           workspace: shared
@@ -244,7 +244,7 @@ spec:
       runAfter:
         - build-gcp-firebase-hosting
       taskRef:
-        name: iacs-555-gcp-frontend-get-url-gcp-firebase-hosting
+        name: get-url-gcp-firebase-hosting
       workspaces:
         - name: shared
           workspace: shared
@@ -263,7 +263,7 @@ spec:
       runAfter:
         - get-url-gcp-firebase-hosting
       taskRef:
-        name: iacs-555-gcp-frontend-deploy-gcp-firebase-hosting
+        name: deploy-gcp-firebase-hosting
       workspaces:
         - name: shared
           workspace: shared
@@ -273,7 +273,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: iacs-555-gcp-frontend-git-checkout
+  name: git-checkout
 spec:
   params:
     - description: URL of the GIT repository with https protocol
@@ -346,7 +346,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: iacs-555-gcp-frontend-app-compile-adapter-into-pulumi-yaml
+  name: app-compile-adapter-into-pulumi-yaml
 spec:
   params:
     - default: ""
@@ -492,7 +492,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: iacs-555-gcp-frontend-app-deploy-by-pulumi-yaml
+  name: app-deploy-by-pulumi-yaml
 spec:
   params:
     - description: Application Name of QmonusVS
@@ -731,7 +731,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: iacs-555-gcp-frontend-generate-environment-variables-file
+  name: generate-environment-variables-file
 spec:
   params:
     - description: Path to QVS Config
@@ -796,7 +796,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: iacs-555-gcp-frontend-build-gcp-firebase-hosting
+  name: build-gcp-firebase-hosting
 spec:
   params:
     - default: .
@@ -844,7 +844,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: iacs-555-gcp-frontend-get-url-gcp-firebase-hosting
+  name: get-url-gcp-firebase-hosting
 spec:
   params:
     - description: Application Name of QmonusVS
@@ -899,7 +899,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: iacs-555-gcp-frontend-deploy-gcp-firebase-hosting
+  name: deploy-gcp-firebase-hosting
 spec:
   params:
     - description: Application Name of QmonusVS
