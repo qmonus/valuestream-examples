@@ -16,7 +16,7 @@ modules:
   - name: qmonus.net/adapter/official
     remote:
       repo: github.com/qmonus/official-cloud-native-adapters-internal
-      revision: main
+      revision: IACS-683_fix-generate-environment-variables-file-task
 
 designPatterns:
   # - pattern: qmonus.net/adapter/official/adapters/gcp/serverless/staticSite/frontend  
