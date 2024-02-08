@@ -39,6 +39,10 @@ spec:
       name: azureDnsZoneResourceGroupName
     - description: 'iacs-683-azure-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
       name: azureDnsZoneName
+    - description: 'iacs-683-azure-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+      name: relativeRecordSetName
+    - description: 'iacs-683-azure-frontend-app-compile-adapter-into-pulumi-yaml: Parameter used in QVS Config'
+      name: deployTargetDir
     - description: 'iacs-683-azure-frontend-app-deploy-by-pulumi-yaml: Deployment Name of QmonusVS'
       name: qvsDeploymentName
     - default: app
@@ -96,6 +100,10 @@ spec:
           value: $(params.azureDnsZoneResourceGroupName)
         - name: azureDnsZoneName
           value: $(params.azureDnsZoneName)
+        - name: relativeRecordSetName
+          value: $(params.relativeRecordSetName)
+        - name: deployTargetDir
+          value: $(params.deployTargetDir)
       runAfter:
         - checkout
       taskRef:
@@ -170,6 +178,13 @@ spec:
       name: azureDnsZoneResourceGroupName
     - description: 'iacs-683-azure-frontend-generate-environment-variables-file: Parameter used in QVS Config'
       name: azureDnsZoneName
+    - description: 'iacs-683-azure-frontend-generate-environment-variables-file: Parameter used in QVS Config'
+      name: relativeRecordSetName
+    - default: dist
+      description: |-
+        iacs-683-azure-frontend-generate-environment-variables-file: Parameter used in QVS Config
+        iacs-683-azure-frontend-deploy-azure-static-web-apps: The path to the frontend build working directory (default: dist)
+      name: deployTargetDir
     - default: .
       description: 'iacs-683-azure-frontend-build-azure-static-web-apps: The path to the frontend build working directory (default: .)'
       name: buildTargetDir
@@ -185,13 +200,10 @@ spec:
         iacs-683-azure-frontend-deploy-azure-static-web-apps: Credential Name of Azure Client Secret
         iacs-683-azure-frontend-get-url-azure-static-web-apps: Credential Name of Azure Client Secret
       name: azureClientSecretName
-    - default: dist
-      description: 'iacs-683-azure-frontend-deploy-azure-static-web-apps: The path to the frontend build working directory (default: dist)'
-      name: deployTargetDir
   results:
     - description: static site url
       name: publicUrl
-      value: $(tasks.get-url.results.publicUrl)
+      value: $(tasks.get-url-azure-static-web-apps.results.publicUrl)
   tasks:
     - name: checkout
       params:
@@ -210,7 +222,7 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: generate-env-file
+    - name: generate-environment-variables-file
       params:
         - name: qvsConfigPath
           value: $(params.qvsConfigPath)
@@ -224,6 +236,10 @@ spec:
           value: $(params.azureDnsZoneResourceGroupName)
         - name: azureDnsZoneName
           value: $(params.azureDnsZoneName)
+        - name: relativeRecordSetName
+          value: $(params.relativeRecordSetName)
+        - name: deployTargetDir
+          value: $(params.deployTargetDir)
       runAfter:
         - checkout
       taskRef:
@@ -231,18 +247,18 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: build
+    - name: build-azure-static-web-apps
       params:
         - name: buildTargetDir
           value: $(params.buildTargetDir)
       runAfter:
-        - generate-env-file
+        - generate-environment-variables-file
       taskRef:
         name: iacs-683-azure-frontend-build-azure-static-web-apps
       workspaces:
         - name: shared
           workspace: shared
-    - name: deploy
+    - name: deploy-azure-static-web-apps
       params:
         - name: appName
           value: $(params.appName)
@@ -259,13 +275,13 @@ spec:
         - name: deployTargetDir
           value: $(params.deployTargetDir)
       runAfter:
-        - build
+        - build-azure-static-web-apps
       taskRef:
         name: iacs-683-azure-frontend-deploy-azure-static-web-apps
       workspaces:
         - name: shared
           workspace: shared
-    - name: get-url
+    - name: get-url-azure-static-web-apps
       params:
         - name: appName
           value: $(params.appName)
@@ -280,7 +296,7 @@ spec:
         - name: azureClientSecretName
           value: $(params.azureClientSecretName)
       runAfter:
-        - deploy
+        - deploy-azure-static-web-apps
       taskRef:
         name: iacs-683-azure-frontend-get-url-azure-static-web-apps
       workspaces:
@@ -385,6 +401,10 @@ spec:
       name: azureDnsZoneResourceGroupName
     - description: Parameter used in QVS Config
       name: azureDnsZoneName
+    - description: Parameter used in QVS Config
+      name: relativeRecordSetName
+    - description: Parameter used in QVS Config
+      name: deployTargetDir
   results:
     - description: Adapter module
       name: module
@@ -460,6 +480,8 @@ spec:
         params.append({'name': 'azureResourceGroupName', 'value': '$(params.azureResourceGroupName)'})
         params.append({'name': 'azureDnsZoneResourceGroupName', 'value': '$(params.azureDnsZoneResourceGroupName)'})
         params.append({'name': 'azureDnsZoneName', 'value': '$(params.azureDnsZoneName)'})
+        params.append({'name': 'relativeRecordSetName', 'value': '$(params.relativeRecordSetName)'})
+        params.append({'name': 'deployTargetDir', 'value': '$(params.deployTargetDir)'})
         vs_secrets = os.environ.get('VS_SECRETS')
         secrets = json.loads(vs_secrets) if vs_secrets else []
         print(json.dumps({'params': params, 'secrets': secrets}, indent=4))
@@ -773,6 +795,10 @@ spec:
       name: azureDnsZoneResourceGroupName
     - description: Parameter used in QVS Config
       name: azureDnsZoneName
+    - description: Parameter used in QVS Config
+      name: relativeRecordSetName
+    - description: Parameter used in QVS Config
+      name: deployTargetDir
   steps:
     - image: linuxserver/yq:3.2.3
       name: check-env
@@ -807,6 +833,8 @@ spec:
         params.append({'name': 'azureResourceGroupName', 'value': '$(params.azureResourceGroupName)'})
         params.append({'name': 'azureDnsZoneResourceGroupName', 'value': '$(params.azureDnsZoneResourceGroupName)'})
         params.append({'name': 'azureDnsZoneName', 'value': '$(params.azureDnsZoneName)'})
+        params.append({'name': 'relativeRecordSetName', 'value': '$(params.relativeRecordSetName)'})
+        params.append({'name': 'deployTargetDir', 'value': '$(params.deployTargetDir)'})
         print(json.dumps({'params': params}, indent=4))
         open('$(workspaces.shared.path)/params.json', 'w').write(json.dumps({'params': params}, indent=4))
       workingDir: $(workspaces.shared.path)/source/
