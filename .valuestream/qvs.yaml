@@ -6,7 +6,7 @@ params:
 
 modules:
   - name: github.com/qmonus/official-cloud-native-adapters
-    revision: v0.20.0
+    revision: v0.23.0
 
 designPatterns:
   - pattern: qmonus.net/adapter/official/kubernetes/deployment/simple
@@ -21,5 +21,8 @@ designPatterns:
       k8sNamespace: $(params.k8sNamespace)
       appName: nginx-demo
       port: "80"
-  - pattern: qmonus.net/adapter/official/pipeline/deploy:simple
+  - pattern: qmonus.net/adapter/official/pipeline/deploy:simpleDeployByPulumiYaml
+    pipelineParams:
+      useCred:
+        kubernetes: true
   - pattern: qmonus.net/adapter/official/pipeline/sample:resolveIPAddress
