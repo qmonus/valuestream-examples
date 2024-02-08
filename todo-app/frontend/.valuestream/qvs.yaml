@@ -17,10 +17,10 @@ modules:
       revision: IACS-683_fix-generate-environment-variables-file-task
 
 designPatterns:
-  # - pattern: qmonus.net/adapter/official/adapters/azure/serverless/staticSite/frontend  
-  #   params:
-  #     appName: $(params.appName)
-  #     azureSubscriptionId: $(params.azureSubscriptionId)
-  #     azureResourceGroupName: $(params.azureResourceGroupName)
-  #     azureDnsZoneResourceGroupName: $(params.azureDnsZoneResourceGroupName)
-  #     azureDnsZoneName: $(params.azureDnsZoneName)
+  - pattern: qmonus.net/adapter/official/adapters/azure/serverless/staticSite/frontend  
+    params:
+      appName: $(params.appName)
+      azureSubscriptionId: $(params.azureSubscriptionId)
+      azureResourceGroupName: $(params.azureResourceGroupName)
+      azureDnsZoneResourceGroupName: $(params.azureDnsZoneResourceGroupName)
+      azureDnsZoneName: $(params.azureDnsZoneName)
