@@ -911,8 +911,6 @@ spec:
                 break
         else:
             print('Could not find "gcp.firebase.HostingSite" resource in pulumi stack.')
-            if os.path.exists("siteId"):
-                os.remove("siteId")
             f = open('/tekton/results/defaultDomain', 'w')
             f.write('')
             f.close()
