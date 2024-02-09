@@ -203,7 +203,7 @@ spec:
   results:
     - description: static site url
       name: publicUrl
-      value: $(tasks.get-url-azure-static-web-apps.results.publicUrl)
+      value: $(tasks.get-url.results.publicUrl)
   tasks:
     - name: checkout
       params:
@@ -222,7 +222,7 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: generate-environment-variables-file
+    - name: generate-env-file
       params:
         - name: qvsConfigPath
           value: $(params.qvsConfigPath)
@@ -247,18 +247,18 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: build-azure-static-web-apps
+    - name: build
       params:
         - name: buildTargetDir
           value: $(params.buildTargetDir)
       runAfter:
-        - generate-environment-variables-file
+        - generate-env-file
       taskRef:
         name: iacs-683-azure-frontend-build-azure-static-web-apps
       workspaces:
         - name: shared
           workspace: shared
-    - name: deploy-azure-static-web-apps
+    - name: deploy
       params:
         - name: appName
           value: $(params.appName)
@@ -275,13 +275,13 @@ spec:
         - name: deployTargetDir
           value: $(params.deployTargetDir)
       runAfter:
-        - build-azure-static-web-apps
+        - build
       taskRef:
         name: iacs-683-azure-frontend-deploy-azure-static-web-apps
       workspaces:
         - name: shared
           workspace: shared
-    - name: get-url-azure-static-web-apps
+    - name: get-url
       params:
         - name: appName
           value: $(params.appName)
@@ -296,7 +296,7 @@ spec:
         - name: azureClientSecretName
           value: $(params.azureClientSecretName)
       runAfter:
-        - deploy-azure-static-web-apps
+        - deploy
       taskRef:
         name: iacs-683-azure-frontend-get-url-azure-static-web-apps
       workspaces:
@@ -965,14 +965,8 @@ spec:
       image: swacli/static-web-apps-cli:1.1.6
       name: deploy
       script: |-
-        #!/usr/bin/env bash
-        az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID} --output none
-        RESOURCE_EXISTENCE_CHECK=$(az staticwebapp show --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} 2>&1 > /dev/null)
-        if [[ $RESOURCE_EXISTENCE_CHECK == "ERROR: (ResourceNotFound)"* ]]; then
-          echo "SKIP: azure static web app not found"
-        else
-          swa deploy $(params.deployTargetDir) --no-use-keychain --deployment-token $(az staticwebapp secrets list --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} --query "properties.apiKey" | tr -d '"')
-        fi
+        az login --service-principal -u "${AZURE_CLIENT_ID}" -p "${AZURE_CLIENT_SECRET}" --tenant "${AZURE_TENANT_ID}"
+        swa deploy $(params.deployTargetDir) --no-use-keychain --deployment-token $(az staticwebapp secrets list --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} --query "properties.apiKey" | tr -d '"')
       securityContext:
         runAsUser: 0
       workingDir: $(workspaces.shared.path)/source
@@ -1020,21 +1014,12 @@ spec:
       image: mcr.microsoft.com/azure-cli:2.57.0
       name: geturl
       script: |-
-        #!/usr/bin/env bash
-        az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID} --output none
-        RESOURCE_EXISTENCE_CHECK=$(az staticwebapp show --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} 2>&1 > /dev/null)
-        if [[ $RESOURCE_EXISTENCE_CHECK == "ERROR: (ResourceNotFound)"* ]]; then
-          echo "SKIP: azure static web app not found"
-          echo "" > /tekton/results/publicUrl
-        else
-          # get url of custom domain url
-          result=$(az staticwebapp hostname list --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} --query '[].domainName' -o tsv || true)
-          if [ -n "${result}" ]; then
-            scheme='https://'
-            echo "${scheme}${result}" | tee /tekton/results/publicUrl
-          else
-            echo "" > /tekton/results/publicUrl
-          fi
+        az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID}
+        # get url of custom domain url
+        result=$(az staticwebapp hostname list --name $(params.appName) --resource-group $(params.azureResourceGroupName) --query '[].domainName' -o tsv || true)
+        if [ -n "${result}" ]; then
+        	scheme='https://'
+        	echo "${scheme}${result}" | tee /tekton/results/publicUrl
         fi
       workingDir: $(workspaces.shared.path)/source
   workspaces:
