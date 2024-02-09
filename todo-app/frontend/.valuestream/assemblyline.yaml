@@ -1,7 +1,7 @@
 apiVersion: vs.axis-dev.io/v1
 kind: AssemblyLine
 metadata:
-  name: todo-app-frontend-deploy
+  name: iacs-683-azure-frontend
 spec:
   params:
     - name: gitRevision
@@ -15,20 +15,20 @@ spec:
     - name: deploy
       spec:
         deployment:
-          app: todo-app-frontend
-          name: azure-todo-app-frontend
+          app: iacs-683-azure-frontend
+          name: iacs-863-azure-frontend
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
-        pipeline: todo-app-frontend-deploy
+        pipeline: iacs-683-azure-frontend-deploy
     - name: publish-site
       spec:
         deployment:
-          app: todo-app-frontend
-          name: azure-todo-app-frontend
+          app: iacs-683-azure-frontend
+          name: iacs-863-azure-frontend
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
-        pipeline: todo-app-frontend-publish-site
+        pipeline: iacs-683-azure-frontend-publish-site
       runAfter:
         - deploy
