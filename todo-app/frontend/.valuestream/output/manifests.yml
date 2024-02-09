@@ -967,11 +967,11 @@ spec:
       script: |-
         #!/usr/bin/env bash
         az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID} --output none
-        RESOURCE_EXISTENCE_CHECK=$(az staticwebapp show --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} 2>&1 > /dev/null)
-        if [[ $RESOURCE_EXISTENCE_CHECK == "ERROR: (ResourceNotFound)"* ]]; then
-          echo "SKIP: azure static web app not found"
+        secret=$(az staticwebapp secrets list --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} --query "properties.apiKey" | tr -d '"')
+        if [ -n "${secret}" ]; then
+          swa deploy $(params.deployTargetDir) --no-use-keychain --deployment-token ${secret}
         else
-          swa deploy $(params.deployTargetDir) --no-use-keychain --deployment-token $(az staticwebapp secrets list --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} --query "properties.apiKey" | tr -d '"')
+          echo "SKIP: secret of azure static web app not found"
         fi
       securityContext:
         runAsUser: 0
@@ -1022,19 +1022,14 @@ spec:
       script: |-
         #!/usr/bin/env bash
         az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID} --output none
-        RESOURCE_EXISTENCE_CHECK=$(az staticwebapp show --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} 2>&1 > /dev/null)
-        if [[ $RESOURCE_EXISTENCE_CHECK == "ERROR: (ResourceNotFound)"* ]]; then
-          echo "SKIP: azure static web app not found"
-          echo "" > /tekton/results/publicUrl
+        # get url of custom domain url
+        result=$(az staticwebapp hostname list --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} --query '[].domainName' -o tsv || true)
+        if [ -n "${result}" ]; then
+          scheme='https://'
+          echo "${scheme}${result}" | tee /tekton/results/publicUrl
         else
-          # get url of custom domain url
-          result=$(az staticwebapp hostname list --name ${SWA_CLI_APP_NAME} --resource-group ${AZURE_RESOURCE_GROUP} --query '[].domainName' -o tsv || true)
-          if [ -n "${result}" ]; then
-            scheme='https://'
-            echo "${scheme}${result}" | tee /tekton/results/publicUrl
-          else
-            echo "" > /tekton/results/publicUrl
-          fi
+          echo "" > /tekton/results/publicUrl
+          "SKIP: hostname of azure static web app found"
         fi
       workingDir: $(workspaces.shared.path)/source
   workspaces:
