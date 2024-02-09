@@ -1,7 +1,7 @@
 apiVersion: vs.axis-dev.io/v1
 kind: AssemblyLine
 metadata:
-  name: iacs-683-gcp-frontend-deploy
+  name: iacs-683-gcp-frontend
 spec:
   params:
     - name: gitRevision
