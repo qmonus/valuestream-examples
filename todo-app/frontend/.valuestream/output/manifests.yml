@@ -177,10 +177,10 @@ spec:
   results:
     - description: Firebase Hosting default domain url
       name: defaultDomain
-      value: $(tasks.get-url-gcp-firebase-hosting.results.defaultDomain)
+      value: $(tasks.get-url.results.defaultDomain)
     - description: Firebase Hosting custom domain url
       name: customDomain
-      value: $(tasks.get-url-gcp-firebase-hosting.results.customDomain)
+      value: $(tasks.get-url.results.customDomain)
   tasks:
     - name: checkout
       params:
@@ -199,7 +199,7 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: generate-environment-variables-file
+    - name: generate-env-file
       params:
         - name: qvsConfigPath
           value: $(params.qvsConfigPath)
@@ -222,18 +222,18 @@ spec:
       workspaces:
         - name: shared
           workspace: shared
-    - name: build-gcp-firebase-hosting
+    - name: build
       params:
         - name: buildTargetDir
           value: $(params.buildTargetDir)
       runAfter:
-        - generate-environment-variables-file
+        - generate-env-file
       taskRef:
         name: iacs-555-gcp-frontend-build-gcp-firebase-hosting
       workspaces:
         - name: shared
           workspace: shared
-    - name: get-url-gcp-firebase-hosting
+    - name: get-url
       params:
         - name: appName
           value: $(params.appName)
@@ -242,13 +242,13 @@ spec:
         - name: deployStateName
           value: $(params.deployStateName)
       runAfter:
-        - build-gcp-firebase-hosting
+        - build
       taskRef:
         name: iacs-555-gcp-frontend-get-url-gcp-firebase-hosting
       workspaces:
         - name: shared
           workspace: shared
-    - name: deploy-gcp-firebase-hosting
+    - name: deploy
       params:
         - name: appName
           value: $(params.appName)
@@ -261,7 +261,7 @@ spec:
         - name: gcpServiceAccountSecretName
           value: $(params.gcpServiceAccountSecretName)
       runAfter:
-        - get-url-gcp-firebase-hosting
+        - get-url
       taskRef:
         name: iacs-555-gcp-frontend-deploy-gcp-firebase-hosting
       workspaces:
