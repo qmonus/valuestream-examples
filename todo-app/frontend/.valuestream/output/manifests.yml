@@ -1029,7 +1029,7 @@ spec:
           echo "${scheme}${result}" | tee /tekton/results/publicUrl
         else
           echo "" > /tekton/results/publicUrl
-          "SKIP: hostname of azure static web app found"
+          echo "SKIP: hostname of azure static web app found"
         fi
       workingDir: $(workspaces.shared.path)/source
   workspaces:
