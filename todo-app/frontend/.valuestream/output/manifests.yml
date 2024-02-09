@@ -893,7 +893,6 @@ spec:
       script: |-
         #!/usr/bin/env python3
         import json
-        import os
         import sys
 
         with open('$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)/.pulumi/stacks/local/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName).json') as f:
