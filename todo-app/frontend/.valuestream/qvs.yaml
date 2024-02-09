@@ -19,11 +19,11 @@ modules:
       revision: IACS-683_fix-generate-environment-variables-file-task
 
 designPatterns:
-  # - pattern: qmonus.net/adapter/official/adapters/gcp/serverless/staticSite/frontend  
-  #   params:
-  #     appName: $(params.appName)
-  #     gcpProjectId: $(params.gcpProjectId)
-  #     gcpFirebaseHostingSiteId: $(params.gcpFirebaseHostingSiteId)
-  #     gcpFirebaseHostingCustomDomainName: $(params.gcpFirebaseHostingCustomDomainName)
-  #     dnsZoneName: $(params.dnsZoneName)
-  #     dnsZoneProjectId: $(params.dnsZoneProjectId)
+  - pattern: qmonus.net/adapter/official/adapters/gcp/serverless/staticSite/frontend  
+    params:
+      appName: $(params.appName)
+      gcpProjectId: $(params.gcpProjectId)
+      gcpFirebaseHostingSiteId: $(params.gcpFirebaseHostingSiteId)
+      gcpFirebaseHostingCustomDomainName: $(params.gcpFirebaseHostingCustomDomainName)
+      dnsZoneName: $(params.dnsZoneName)
+      dnsZoneProjectId: $(params.dnsZoneProjectId)
