@@ -11,8 +11,6 @@ params:
     type: string
   - name: relativeRecordSetName
     type: string
-  - name: deployTargetDir
-    type: string
 
 modules:
   - name: qmonus.net/adapter/official
@@ -29,4 +27,3 @@ designPatterns:
       azureDnsZoneResourceGroupName: $(params.azureDnsZoneResourceGroupName)
       azureDnsZoneName: $(params.azureDnsZoneName)
       relativeRecordSetName: $(params.relativeRecordSetName)
-      deployTargetDir: $(params.deployTargetDir)
