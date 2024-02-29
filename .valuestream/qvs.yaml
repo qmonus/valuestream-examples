@@ -21,10 +21,10 @@ designPatterns:
       port: "80"
       replicas: "1"
       secrets:
-        - secret01:
+        - SECRET01:
             key: XXXXX
             version: "2"
-        - secret02:
+        - SECRET02:
             key: YYYYY
             version: "2"
   - pattern: qmonus.net/adapter/official/kubernetes/sample:loadbalancer 
