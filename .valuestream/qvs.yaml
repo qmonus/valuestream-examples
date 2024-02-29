@@ -3,6 +3,10 @@ params:
     type: string
   - name: imageName
     type: string
+  - name: secret01
+    type: secret
+  - name: secret02
+    type: secret
 
 modules:
   - name: github.com/qmonus/official-cloud-native-adapters
@@ -13,13 +17,22 @@ designPatterns:
     params:
       k8sNamespace: $(params.k8sNamespace)
       imageName:    $(params.imageName)
-      appName: nginx-demo
+      appName: ticekt-1663-verify-nginx-demo
       port: "80"
       replicas: "1"
+      secrets:
+        - SECRET01:
+            name: $(params.secret01)
+            key: XXXXX
+            version: 0.1.0
+        - SECRET02:
+            name: $(params.secret02)
+            key: YYYYY
+            version: 0.1.0
   - pattern: qmonus.net/adapter/official/kubernetes/sample:loadbalancer 
     params:
       k8sNamespace: $(params.k8sNamespace)
-      appName: nginx-demo
+      appName: ticekt-1663-verify-nginx-demo
       port: "80"
   - pattern: qmonus.net/adapter/official/pipeline/deploy:simple
   - pattern: qmonus.net/adapter/official/pipeline/sample:resolveIPAddress
