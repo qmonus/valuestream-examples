@@ -3,10 +3,6 @@ params:
     type: string
   - name: imageName
     type: string
-  - name: secret01
-    type: secret
-  - name: secret02
-    type: secret
 
 modules:
   - name: github.com/qmonus/official-cloud-native-adapters
