@@ -22,13 +22,13 @@ designPatterns:
       replicas: "1"
       secrets:
         - SECRET01:
-            name: $(params.secret01)
+            name: "secret01"
             key: XXXXX
-            version: 2
+            version: "2"
         - SECRET02:
-            name: $(params.secret02)
+            name: "secret02"
             key: YYYYY
-            version: 2
+            version: "2"
   - pattern: qmonus.net/adapter/official/kubernetes/sample:loadbalancer 
     params:
       k8sNamespace: $(params.k8sNamespace)
