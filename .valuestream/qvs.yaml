@@ -23,10 +23,10 @@ designPatterns:
       secrets:
         - SECRET01:
             key: XXXXX
-            version: 1
+            version: 2
         - SECRET02:
             key: YYYYY
-            version: 1
+            version: 2
   - pattern: qmonus.net/adapter/official/kubernetes/sample:loadbalancer 
     params:
       k8sNamespace: $(params.k8sNamespace)
