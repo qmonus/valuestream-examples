@@ -1,0 +1,45 @@
+params:
+  - name: version
+    type: string
+  - name: esoNamespace
+    type: string
+  - name: appName
+    type: string
+  - name: smGcpProject
+    type: string
+  - name: gsaGcpProject
+    type: string
+  - name: k8sClusterGcpProject
+    type: string
+  - name: gsaName
+    type: string
+  - name: ksaNamespace
+    type: string
+  - name: k8sClusterLocation
+    type: string
+  - name: k8sClusterName
+    type: string
+
+modules:
+  - name: qmonus.net/adapter/official
+    local: 
+      path: .
+
+designPatterns:
+  - pattern: qmonus.net/adapter/official/kubernetes/secrets/eso
+    params:
+      version:      $(params.version)
+      k8sNamespace: $(params.esoNamespace)
+
+  - pattern: qmonus.net/adapter/official/kubernetes/secrets/gke/clustersecretstore
+    params:
+      appName:              $(params.appName)
+      smGcpProject:         $(params.smGcpProject)
+      gsaGcpProject:        $(params.gsaGcpProject)
+      k8sClusterGcpProject: $(params.k8sClusterGcpProject)
+      gsaName:              $(params.gsaName)
+      ksaNamespace:         $(params.ksaNamespace)
+      k8sClusterLocation:   $(params.k8sClusterLocation)
+      k8sClusterName:       $(params.k8sClusterName)
+
+  - pattern: qmonus.net/adapter/official/pipeline/deploy:simple
