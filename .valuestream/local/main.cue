@@ -26,16 +26,17 @@ _const: {
 	...
 }
 
+#SecretName: string
+
 DesignPattern: {
 	name: "local"
 
 	parameters: {
 		k8sNamespace: string
 		imageName:    string
-		secrets: {
-			SECRET01: #Secret
-			SECRET02: #Secret
-		}
+		secrets: [{
+			#SecretName: #Secret
+		}]
 	}
 
 	resources: app: {
