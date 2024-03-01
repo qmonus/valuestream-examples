@@ -1,0 +1,6 @@
+[submodule "e2e-test/modules/vs-mvp"]
+	path = e2e-test/modules/vs-mvp
+	url = https://github.com/qmonus/vs-mvp
+[submodule "e2e-test/modules/qvsctl"]
+	path = e2e-test/modules/qvsctl
+	url = https://github.com/qmonus/qvsctl

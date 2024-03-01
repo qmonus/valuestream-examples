@@ -1,0 +1,782 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  annotations:
+    vs.axis-dev.io/stage-type: build
+  name: ticekt-1663-verify-nginx-demo-build
+spec:
+  params:
+    - description: 'ticekt-1663-verify-nginx-demo-git-checkout: URL of the GIT repository with https protocol'
+      name: gitCloneUrl
+    - description: 'ticekt-1663-verify-nginx-demo-git-checkout: Git source revision'
+      name: gitRevision
+    - default: "true"
+      description: 'ticekt-1663-verify-nginx-demo-git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
+      name: gitRepositoryDeleteExisting
+    - default: ""
+      description: |-
+        ticekt-1663-verify-nginx-demo-git-checkout: Subdirectory in the source directory to clone Git repository (default: "")
+        ticekt-1663-verify-nginx-demo-docker-login-gcp: Path in the source directory to clone Git repository
+      name: gitCheckoutSubDirectory
+    - description: 'ticekt-1663-verify-nginx-demo-git-checkout: Git token sercret name'
+      name: gitTokenSecretName
+    - description: 'ticekt-1663-verify-nginx-demo-docker-login-gcp: The secret name of GCP SA credential'
+      name: gcpServiceAccountSecretName
+    - description: 'ticekt-1663-verify-nginx-demo-docker-login-gcp: '
+      name: gcpProjectId
+    - description: |-
+        ticekt-1663-verify-nginx-demo-docker-login-gcp: Path of the container registry without image name
+        ticekt-1663-verify-nginx-demo-buildkit: Path of the container registry without image name
+      name: imageRegistryPath
+    - default: Dockerfile
+      description: 'ticekt-1663-verify-nginx-demo-buildkit: The path to the dockerfile to build (relative to the context) (default: Dockerfile)'
+      name: dockerfile
+    - description: 'ticekt-1663-verify-nginx-demo-buildkit: Short name of the image'
+      name: imageShortName
+    - description: 'ticekt-1663-verify-nginx-demo-buildkit: Image tag'
+      name: imageTag
+    - default: .
+      description: 'ticekt-1663-verify-nginx-demo-buildkit: The path to the build working directory (default: .)'
+      name: pathToContext
+    - default: ""
+      description: 'ticekt-1663-verify-nginx-demo-buildkit: Buildkit additional options (default: "")'
+      name: extraArgs
+  results:
+    - description: Full name of the image with its tag
+      name: imageFullNameTag
+      value: $(tasks.build.results.imageFullNameTag)
+    - description: Full name of the image with its SHA digest
+      name: imageFullNameDigest
+      value: $(tasks.build.results.imageFullNameDigest)
+    - description: SHA digest of the image
+      name: imageDigest
+      value: $(tasks.build.results.imageDigest)
+  tasks:
+    - name: checkout
+      params:
+        - name: gitCloneUrl
+          value: $(params.gitCloneUrl)
+        - name: gitRevision
+          value: $(params.gitRevision)
+        - name: gitRepositoryDeleteExisting
+          value: $(params.gitRepositoryDeleteExisting)
+        - name: gitCheckoutSubDirectory
+          value: $(params.gitCheckoutSubDirectory)
+        - name: gitTokenSecretName
+          value: $(params.gitTokenSecretName)
+      taskRef:
+        name: ticekt-1663-verify-nginx-demo-git-checkout
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: docker-login-gcp
+      params:
+        - name: gcpServiceAccountSecretName
+          value: $(params.gcpServiceAccountSecretName)
+        - name: gcpProjectId
+          value: $(params.gcpProjectId)
+        - name: imageRegistryPath
+          value: $(params.imageRegistryPath)
+        - name: gitCheckoutSubDirectory
+          value: $(params.gitCheckoutSubDirectory)
+      runAfter:
+        - checkout
+      taskRef:
+        name: ticekt-1663-verify-nginx-demo-docker-login-gcp
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: build
+      params:
+        - name: dockerfile
+          value: $(params.dockerfile)
+        - name: imageRegistryPath
+          value: $(params.imageRegistryPath)
+        - name: imageShortName
+          value: $(params.imageShortName)
+        - name: imageTag
+          value: $(params.imageTag)
+        - name: pathToContext
+          value: $(params.pathToContext)
+        - name: extraArgs
+          value: $(params.extraArgs)
+      runAfter:
+        - docker-login-gcp
+      taskRef:
+        name: ticekt-1663-verify-nginx-demo-buildkit
+      workspaces:
+        - name: shared
+          workspace: shared
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  annotations:
+    vs.axis-dev.io/stage-type: resolve-ip-address-after-deploy
+  name: ticekt-1663-verify-nginx-demo-resolve-ip-address-after-deploy
+spec:
+  params:
+    - description: 'ticekt-1663-verify-nginx-demo-resolve-ip-address: Application Name of QmonusVS'
+      name: appName
+    - description: 'ticekt-1663-verify-nginx-demo-resolve-ip-address: Namespace of a deploy resource'
+      name: k8sNamespace
+    - description: 'ticekt-1663-verify-nginx-demo-resolve-ip-address: The secret name of Kubeconfig'
+      name: kubeconfigSecretName
+  results:
+    - description: External IP Address
+      name: ipAddress
+      value: $(tasks.resolve-ip-address.results.ipAddress)
+  tasks:
+    - name: resolve-ip-address
+      params:
+        - name: appName
+          value: $(params.appName)
+        - name: k8sNamespace
+          value: $(params.k8sNamespace)
+        - name: kubeconfigSecretName
+          value: $(params.kubeconfigSecretName)
+      taskRef:
+        name: ticekt-1663-verify-nginx-demo-resolve-ip-address
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  annotations:
+    vs.axis-dev.io/stage-type: deploy
+  name: ticekt-1663-verify-nginx-demo-deploy
+spec:
+  params:
+    - description: 'ticekt-1663-verify-nginx-demo-git-checkout: URL of the GIT repository with https protocol'
+      name: gitCloneUrl
+    - description: 'ticekt-1663-verify-nginx-demo-git-checkout: Git source revision'
+      name: gitRevision
+    - default: "true"
+      description: 'ticekt-1663-verify-nginx-demo-git-checkout: Clean out of the destination directory if it already exists before cloning (default: true)'
+      name: gitRepositoryDeleteExisting
+    - default: ""
+      description: 'ticekt-1663-verify-nginx-demo-git-checkout: Subdirectory in the source directory to clone Git repository (default: "")'
+      name: gitCheckoutSubDirectory
+    - description: |-
+        ticekt-1663-verify-nginx-demo-git-checkout: Git token sercret name
+        ticekt-1663-verify-nginx-demo-compile-design-pattern: Git token sercret name
+      name: gitTokenSecretName
+    - default: ""
+      description: 'ticekt-1663-verify-nginx-demo-compile-design-pattern: Relative path from source directory (default: "")'
+      name: pathToSource
+    - description: 'ticekt-1663-verify-nginx-demo-compile-design-pattern: Path to QVS Config'
+      name: qvsConfigPath
+    - description: 'ticekt-1663-verify-nginx-demo-compile-design-pattern: Parameter used in QVS Config'
+      name: k8sNamespace
+    - description: 'ticekt-1663-verify-nginx-demo-compile-design-pattern: Parameter used in QVS Config'
+      name: imageName
+    - description: 'ticekt-1663-verify-nginx-demo-deployment-worker: Application Name of QmonusVS'
+      name: appName
+    - description: 'ticekt-1663-verify-nginx-demo-deployment-worker: Deployment Name of QmonusVS'
+      name: qvsDeploymentName
+    - default: main
+      description: 'ticekt-1663-verify-nginx-demo-deployment-worker: Used as pulumi-stack name suffix (default: main)'
+      name: deployStateName
+    - default: kubernetes
+      description: 'ticekt-1663-verify-nginx-demo-deployment-worker: Deployment-worker provider type (default: kubernetes)'
+      name: providerType
+    - description: 'ticekt-1663-verify-nginx-demo-deployment-worker: The secret name of Kubeconfig'
+      name: kubeconfigSecretName
+  results:
+    - description: Adapter module
+      name: module
+      value: $(tasks.compile.results.module)
+    - description: Adapter version
+      name: adapterRevision
+      value: $(tasks.compile.results.adapterRevision)
+    - description: List of Adapters used in Assemblyline
+      name: adapters
+      value: $(tasks.compile.results.adapters)
+  tasks:
+    - name: checkout
+      params:
+        - name: gitCloneUrl
+          value: $(params.gitCloneUrl)
+        - name: gitRevision
+          value: $(params.gitRevision)
+        - name: gitRepositoryDeleteExisting
+          value: $(params.gitRepositoryDeleteExisting)
+        - name: gitCheckoutSubDirectory
+          value: $(params.gitCheckoutSubDirectory)
+        - name: gitTokenSecretName
+          value: $(params.gitTokenSecretName)
+      taskRef:
+        name: ticekt-1663-verify-nginx-demo-git-checkout
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: compile
+      params:
+        - name: pathToSource
+          value: $(params.pathToSource)
+        - name: qvsConfigPath
+          value: $(params.qvsConfigPath)
+        - name: gitTokenSecretName
+          value: $(params.gitTokenSecretName)
+        - name: k8sNamespace
+          value: $(params.k8sNamespace)
+        - name: imageName
+          value: $(params.imageName)
+      runAfter:
+        - checkout
+      taskRef:
+        name: ticekt-1663-verify-nginx-demo-compile-design-pattern
+      workspaces:
+        - name: shared
+          workspace: shared
+    - name: deploy
+      params:
+        - name: appName
+          value: $(params.appName)
+        - name: qvsDeploymentName
+          value: $(params.qvsDeploymentName)
+        - name: deployStateName
+          value: $(params.deployStateName)
+        - name: providerType
+          value: $(params.providerType)
+        - name: kubeconfigSecretName
+          value: $(params.kubeconfigSecretName)
+      runAfter:
+        - compile
+      taskRef:
+        name: ticekt-1663-verify-nginx-demo-deployment-worker
+      workspaces:
+        - name: shared
+          workspace: shared
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ticekt-1663-verify-nginx-demo-git-checkout
+spec:
+  params:
+    - description: URL of the GIT repository with https protocol
+      name: gitCloneUrl
+    - description: Git source revision
+      name: gitRevision
+    - default: "true"
+      description: Clean out of the destination directory if it already exists before cloning
+      name: gitRepositoryDeleteExisting
+    - default: ""
+      description: Subdirectory in the source directory to clone Git repository
+      name: gitCheckoutSubDirectory
+    - description: Git token sercret name
+      name: gitTokenSecretName
+  results:
+    - description: Git commit ID that was checked out by this Task
+      name: gitCommitId
+    - description: The directory that was cloned repository by this Task
+      name: gitCheckoutDirectory
+  steps:
+    - env:
+        - name: GIT_REPO_DELETE_EXISTING
+          value: $(params.gitRepositoryDeleteExisting)
+        - name: GIT_CHECKOUT_DIR
+          value: $(workspaces.shared.path)/source/$(params.gitCheckoutSubDirectory)
+      image: docker:git
+      name: clean-dir
+      script: |
+        if [ "${GIT_REPO_DELETE_EXISTING}" = "true" ]; then
+          if [ -d "${GIT_CHECKOUT_DIR}" ]; then
+            # Delete non-hidden files and directories
+            rm -rf "${GIT_CHECKOUT_DIR:?}"/*
+            # Delete files and directories starting with . but excluding ..
+            rm -rf "${GIT_CHECKOUT_DIR}"/.[!.]*
+            # Delete files and directories starting with .. plus any other character
+            rm -rf "${GIT_CHECKOUT_DIR}"/..?*
+          fi
+        fi
+    - env:
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: $(params.gitTokenSecretName)
+        - name: GIT_CHECKOUT_DIR
+          value: $(workspaces.shared.path)/source/$(params.gitCheckoutSubDirectory)
+      image: docker:git
+      name: git-clone
+      script: |-
+        set +x
+        GIT_REPOSITORY_URL=`echo $(params.gitCloneUrl) | sed "s/https:\/\///g"`
+        GIT_TOKEN=`echo ${GIT_TOKEN} | sed "s/^ //" | sed "s/^　//" | sed "s/ $//" | sed "s/　$//"`
+        git clone https://${GIT_TOKEN}:x-oauth-basic@${GIT_REPOSITORY_URL} ${GIT_CHECKOUT_DIR}
+        set -x
+    - env:
+        - name: GIT_CHECKOUT_DIR
+          value: $(workspaces.shared.path)/source/$(params.gitCheckoutSubDirectory)
+      image: docker:git
+      name: git-checkout
+      script: |
+        cd ${GIT_CHECKOUT_DIR}
+        git fetch origin $(params.gitRevision)
+        git checkout $(params.gitRevision)
+        git rev-parse $(params.gitRevision) | tr -d '\n' | tee $(results.gitCommitId.path)
+        echo ""
+        echo -n ${GIT_CHECKOUT_DIR} | tee $(results.gitCheckoutDirectory.path)
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ticekt-1663-verify-nginx-demo-docker-login-gcp
+spec:
+  params:
+    - description: The secret name of GCP SA credential
+      name: gcpServiceAccountSecretName
+    - description: ""
+      name: gcpProjectId
+    - description: Path of the container registry without image name
+      name: imageRegistryPath
+    - description: Path in the source directory to clone Git repository
+      name: gitCheckoutSubDirectory
+  steps:
+    - args:
+        - gcloud auth activate-service-account --key-file=$(GOOGLE_APPLICATION_CREDENTIALS) --project=$(params.gcpProjectId) && gcloud auth print-access-token > /workspace/.gar-cred.txt
+      command:
+        - /bin/sh
+        - -c
+      env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secret/account.json
+      image: google/cloud-sdk:278.0.0-alpine
+      name: gcloud-get-registory-credentials
+      volumeMounts:
+        - mountPath: /secret
+          name: user-gcp-secret
+          readOnly: true
+    - args:
+        - docker --config=$(workspaces.shared.path)/$(params.gitCheckoutSubDirectory)/dockerconfig login -u oauth2accesstoken -p "$(cat /workspace/.gar-cred.txt)" $(params.imageRegistryPath)
+      command:
+        - /bin/sh
+        - -c
+      image: docker
+      name: docker-login
+  volumes:
+    - name: user-gcp-secret
+      secret:
+        items:
+          - key: serviceaccount
+            path: account.json
+        secretName: $(params.gcpServiceAccountSecretName)
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ticekt-1663-verify-nginx-demo-buildkit
+spec:
+  params:
+    - default: Dockerfile
+      description: The path to the dockerfile to build (relative to the context)
+      name: dockerfile
+    - description: Path of the container registry without image name
+      name: imageRegistryPath
+    - description: Short name of the image
+      name: imageShortName
+    - description: Image tag
+      name: imageTag
+    - default: .
+      description: The path to the build working directory
+      name: pathToContext
+    - default: ""
+      description: Buildkit additional options
+      name: extraArgs
+  results:
+    - description: Full name of the image with its tag
+      name: imageFullNameTag
+    - description: Full name of the image with its SHA digest
+      name: imageFullNameDigest
+    - description: SHA digest of the image
+      name: imageDigest
+  steps:
+    - env:
+        - name: DOCKER_CONFIG
+          value: $(workspaces.shared.path)/dockerconfig
+        - name: BUILDCTL_CONNECT_RETRIES_MAX
+          value: "20"
+      image: moby/buildkit:v0.12.5
+      name: build-and-push
+      resources:
+        limits:
+          cpu: "2"
+          memory: 5Gi
+        requests:
+          cpu: "2"
+          memory: 5Gi
+      script: |-
+        if [ "$(params.imageTag)" = "buildcache" ]; then
+          echo "Error: unsupported imageTag is specified."
+          exit 1
+        fi
+
+        buildctl-daemonless.sh \
+        build \
+        --progress=plain \
+        --frontend=dockerfile.v0 \
+        --opt filename=$(params.dockerfile) \
+        --frontend=dockerfile.v0 \
+        --local context=$(params.pathToContext) \
+        --local dockerfile=$(params.pathToContext) \
+        --output type=image,name=$(params.imageRegistryPath)/$(params.imageShortName):$(params.imageTag),push=true \
+        --import-cache type=registry,ref=$(params.imageRegistryPath)/$(params.imageShortName):buildcache \
+        --export-cache type=registry,ref=$(params.imageRegistryPath)/$(params.imageShortName):buildcache \
+        --metadata-file $(workspaces.shared.path)/meta.json \
+        $(params.extraArgs)
+      securityContext:
+        privileged: true
+      workingDir: $(workspaces.shared.path)/source
+    - image: docker.io/stedolan/jq@sha256:a61ed0bca213081b64be94c5e1b402ea58bc549f457c2682a86704dd55231e09
+      name: resolve-digest
+      script: |
+        jq -rj ' .["containerimage.digest"]' \
+          < $(workspaces.shared.path)/meta.json \
+          | tee /tekton/results/imageDigest
+    - image: bash:latest
+      name: dump-imagefullnametag
+      script: |-
+        #!/usr/bin/env bash
+        echo -n $(params.imageRegistryPath)/$(params.imageShortName):$(params.imageTag) | tee /tekton/results/imageFullNameTag
+    - image: bash:latest
+      name: dump-imagefullnamedigest
+      script: |-
+        #!/usr/bin/env bash
+        cat <(echo -n $(params.imageRegistryPath)/$(params.imageShortName)@) /tekton/results/imageDigest | tee /tekton/results/imageFullNameDigest
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ticekt-1663-verify-nginx-demo-resolve-ip-address
+spec:
+  params:
+    - description: Application Name of QmonusVS
+      name: appName
+    - description: Namespace of a deploy resource
+      name: k8sNamespace
+    - description: The secret name of Kubeconfig
+      name: kubeconfigSecretName
+  results:
+    - description: External IP Address
+      name: ipAddress
+  steps:
+    - env:
+        - name: KUBECONFIG
+          value: /secret/kubeconfig
+      image: gcr.io/cloud-builders/kubectl
+      name: resolve-external-ip-address
+      script: |-
+        #!/usr/bin/env sh
+        kubectl -n $(params.k8sNamespace) --kubeconfig $KUBECONFIG get service $(params.appName) -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' | tee tekton/results/ipAddress
+      volumeMounts:
+        - mountPath: /secret
+          name: user-kubeconfig
+          readOnly: true
+  volumes:
+    - name: user-kubeconfig
+      secret:
+        items:
+          - key: kubeconfig
+            path: kubeconfig
+        secretName: $(params.kubeconfigSecretName)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ticekt-1663-verify-nginx-demo-compile-design-pattern
+spec:
+  params:
+    - default: ""
+      description: Relative path from source directory
+      name: pathToSource
+    - description: Path to QVS Config
+      name: qvsConfigPath
+    - description: Git token sercret name
+      name: gitTokenSecretName
+    - description: Parameter used in QVS Config
+      name: k8sNamespace
+    - description: Parameter used in QVS Config
+      name: imageName
+  results:
+    - description: Adapter module
+      name: module
+    - description: Adapter version
+      name: adapterRevision
+    - description: List of Adapters used in Assemblyline
+      name: adapters
+  steps:
+    - image: linuxserver/yq:3.2.3
+      name: display-adapter-info
+      onError: continue
+      script: |-
+        #!/usr/bin/env bash
+
+        # Set Default Pipeline Results
+        echo -n "" > /tekton/results/module
+        echo -n "" > /tekton/results/adapterRevision
+        echo -n "" > /tekton/results/adapters
+
+        # Extract module name
+        module=$(yq -r '.modules[0].name' $(params.qvsConfigPath))
+        echo "module: $module"
+        echo -n $module > /tekton/results/module
+
+        # Extract adapter_revision
+        module_revision=$(yq -r '.modules[0].revision' $(params.qvsConfigPath))
+        module_local_path=$(yq -r '.modules[0].local.path' $(params.qvsConfigPath))
+        module_remote_revision=$(yq -r '.modules[0].remote.revision' $(params.qvsConfigPath))			
+        			
+        if [ "$module_revision" == "null" ]; then
+        	case "$module_local_path" in
+        		null)
+        			# Extract adapter_revision when using remote/repo style module
+        			adapter_revision=$module_remote_revision
+        			;;
+        		*)
+        			# Extract adapter_revision when using local module
+        			qvsctl_mod_path="$(dirname $(params.qvsConfigPath))/${module_local_path}/qvsctl.mod"
+        			if [ -r "$qvsctl_mod_path" ]; then
+        				IFS='@' read -ra separated_list < "$qvsctl_mod_path"
+        				adapter_revision=${separated_list[1]}
+        			fi
+        			;;
+        	esac
+        else
+        	# Extract adapter_revision when using remote module
+        	adapter_revision=$module_revision
+        fi
+        echo "adapter_revision: $adapter_revision"
+        echo -n $adapter_revision > /tekton/results/adapterRevision
+
+        # Extract design patterns as a comma-separated line
+        adapters=$(yq -r '.designPatterns[].pattern' $(params.qvsConfigPath) | tr '
+        ' ',' | sed 's/,$//')
+        echo "adapters: $adapters"
+        echo -n $adapters > /tekton/results/adapters
+      workingDir: $(workspaces.shared.path)/source
+    - env:
+        - name: VS_SECRETS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['pipeline.qmonus.net/secrets']
+      image: python
+      name: make-params-json
+      script: |-
+        #!/usr/bin/env python3
+        import json
+        import os
+        params = []
+        params.append({'name': 'k8sNamespace', 'value': '$(params.k8sNamespace)'})
+        params.append({'name': 'imageName', 'value': '$(params.imageName)'})
+        vs_secrets = os.environ.get('VS_SECRETS')
+        secrets = json.loads(vs_secrets) if vs_secrets else []
+        print(json.dumps({'params': params, 'secrets': secrets}, indent=4))
+        open('$(workspaces.shared.path)/params.json', 'w').write(json.dumps({'params': params, 'secrets': secrets}, indent=4))
+      workingDir: $(workspaces.shared.path)/source/$(params.pathToSource)
+    - args:
+        - manifest
+        - compile
+        - -o
+        - $(workspaces.shared.path)/manifests/manifests-setup.yml
+        - -c
+        - $(params.qvsConfigPath)
+        - -p
+        - $(workspaces.shared.path)/params.json
+        - --setup
+      env:
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: $(params.gitTokenSecretName)
+        - name: TMPDIR
+          value: /tmpdir
+        - name: QVSCTL_SKIP_UPDATE_CHECK
+          value: "true"
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/qvsctl:v0.15.0
+      name: compile-setup
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: "1"
+          memory: 512Mi
+      volumeMounts:
+        - mountPath: /tmpdir
+          name: tmpdir
+      workingDir: $(workspaces.shared.path)/source/$(params.pathToSource)
+    - args:
+        - manifest
+        - compile
+        - -o
+        - $(workspaces.shared.path)/manifests/manifests-app.yml
+        - -c
+        - $(params.qvsConfigPath)
+        - -p
+        - $(workspaces.shared.path)/params.json
+      env:
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: $(params.gitTokenSecretName)
+        - name: TMPDIR
+          value: /tmpdir
+        - name: QVSCTL_SKIP_UPDATE_CHECK
+          value: "true"
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/qvsctl:v0.15.0
+      name: compile-app
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: "1"
+          memory: 512Mi
+      volumeMounts:
+        - mountPath: /tmpdir
+          name: tmpdir
+      workingDir: $(workspaces.shared.path)/source/$(params.pathToSource)
+  volumes:
+    - emptyDir: {}
+      name: tmpdir
+  workspaces:
+    - name: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ticekt-1663-verify-nginx-demo-deployment-worker
+spec:
+  params:
+    - description: Application Name of QmonusVS
+      name: appName
+    - description: Deployment Name of QmonusVS
+      name: qvsDeploymentName
+    - default: main
+      description: Used as pulumi-stack name suffix
+      name: deployStateName
+    - default: kubernetes
+      description: Deployment-worker provider type
+      name: providerType
+    - description: The secret name of Kubeconfig
+      name: kubeconfigSecretName
+  steps:
+    - env:
+        - name: VS_API_ENDPOINT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['vs.axis-dev.io/api-endpoint']
+      image: google/cloud-sdk:365.0.1-slim@sha256:2575543b18e06671eac29aae28741128acfd0e4376257f3f1246d97d00059dcb
+      name: download-state
+      script: |
+        #!/usr/bin/env bash
+        set -o nounset
+        set -o xtrace
+        set -o pipefail
+
+        mkdir -p '$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)'
+        cd '$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)'
+        if [[ -d .pulumi ]]; then
+          exit 0
+        fi
+        SIGNED_URL=`curl -X POST -fs ${VS_API_ENDPOINT}'/apis/v1/projects/$(context.taskRun.namespace)/applications/$(params.appName)/deployments/$(params.qvsDeploymentName)/deploy-state/$(params.deployStateName)/action/signed-url-to-get?taskrun_name=$(context.taskRun.name)&taskrun_uid=$(context.taskRun.uid)' | xargs`
+        mkdir -p /tekton/home/pulumi/old
+        STATUS=`curl -fs ${SIGNED_URL} -o /tekton/home/pulumi/old/state.tgz -w '%{http_code}\n'`
+        if [ ! -z $STATUS ] && [ $STATUS -eq 404 ]; then
+          echo "No state file is provided. Create a new state."
+          exit 0
+        elif [ -z $STATUS ] || [ $STATUS -ne 200 ]; then
+          echo "Error: failed to download state file."
+          exit 1
+        fi
+        if [ -f /tekton/home/pulumi/old/state.tgz ]; then
+          tar xzvf /tekton/home/pulumi/old/state.tgz
+        else
+          echo "Error: status_code is 200 but no state file is provided."
+          exit 1
+        fi
+      workingDir: /opt
+    - args:
+        - --design-pattern=$(params.providerType)
+        - --solarray-env=local
+        - --namespace=$(context.taskRun.namespace)-$(params.appName)-$(params.qvsDeploymentName)
+        - --app-version=$(params.deployStateName)
+        - --disabled-stack-validation
+        - --local-state-path=$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)
+      env:
+        - name: KUBECONFIG
+          value: /secret/kubeconfig
+        - name: CONFIG_PATH
+          value: $(workspaces.shared.path)/manifests
+        - name: GOMEMLIMIT
+          value: 700MiB
+      image: asia-northeast1-docker.pkg.dev/solarray-pro-83383605/valuestream/deployment-worker:8fa43da627bc349cc948ed5dfe8a09e56ef2df18
+      name: deploy
+      onError: continue
+      resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+        requests:
+          cpu: "1"
+          memory: 1Gi
+      volumeMounts:
+        - mountPath: /secret
+          name: user-kubeconfig
+          readOnly: true
+      workingDir: /opt
+    - env:
+        - name: VS_API_ENDPOINT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['vs.axis-dev.io/api-endpoint']
+      image: google/cloud-sdk:365.0.1-slim@sha256:2575543b18e06671eac29aae28741128acfd0e4376257f3f1246d97d00059dcb
+      name: upload-state
+      script: |
+        #!/usr/bin/env bash
+        set -o nounset
+        set -o xtrace
+        set -o pipefail
+
+        cd '$(workspaces.shared.path)/pulumi/$(params.appName)-$(params.qvsDeploymentName)-$(params.deployStateName)'
+        mkdir -p /tekton/home/pulumi/new
+        tar czvf /tekton/home/pulumi/new/state.tgz .pulumi
+        for i in $(seq 1 5); do
+          SIGNED_URL=`curl -X POST -fs ${VS_API_ENDPOINT}'/apis/v1/projects/$(context.taskRun.namespace)/applications/$(params.appName)/deployments/$(params.qvsDeploymentName)/deploy-state/$(params.deployStateName)/action/signed-url-to-put?taskrun_name=$(context.taskRun.name)&taskrun_uid=$(context.taskRun.uid)' | xargs`
+          STATUS=`curl -X PUT -fs ${SIGNED_URL} --upload-file /tekton/home/pulumi/new/state.tgz -w '%{http_code}\n'`
+          if [ ! -z $STATUS ] && [ $STATUS -eq 200 ]; then
+            break
+          fi
+          if [ $i -eq 5 ]; then
+            echo "Error: failed to upload new state file."
+            exit 1
+          fi
+          sleep 10
+        done
+        if [ $(cat $(steps.step-deploy.exitCode.path)) -ne 0 ]; then
+          echo "Error: new state file is uploaded, but step-deploy is failed."
+          exit 1
+        fi
+      workingDir: /opt
+  volumes:
+    - name: user-kubeconfig
+      secret:
+        items:
+          - key: kubeconfig
+            path: kubeconfig
+        secretName: $(params.kubeconfigSecretName)
+  workspaces:
+    - name: shared

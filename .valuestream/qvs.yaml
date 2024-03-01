@@ -5,28 +5,22 @@ params:
     type: string
 
 modules:
-  - name: github.com/qmonus/official-cloud-native-adapters
-    revision: v0.20.0
+  - name: github.com/qmonus/sample
+    local:
+      path: . # relative path to qvs.yaml
 
 designPatterns:
-  - pattern: qmonus.net/adapter/official/kubernetes/deployment/simple
+  - pattern: github.com/qmonus/sample/local
     params:
       k8sNamespace: $(params.k8sNamespace)
       imageName:    $(params.imageName)
-      appName: ticekt-1663-verify-nginx-demo
-      port: "80"
-      replicas: "1"
       secrets:
         - SECRET01:
             key: XXXXX
-            version: "2"
+            version: “2”
         - SECRET02:
             key: YYYYY
-            version: "2"
-  - pattern: qmonus.net/adapter/official/kubernetes/sample:loadbalancer 
-    params:
-      k8sNamespace: $(params.k8sNamespace)
-      appName: ticekt-1663-verify-nginx-demo
-      port: "80"
+            version: “2"
   - pattern: qmonus.net/adapter/official/pipeline/deploy:simple
+  - pattern: qmonus.net/adapter/official/pipeline/build:buildkitGcp
   - pattern: qmonus.net/adapter/official/pipeline/sample:resolveIPAddress

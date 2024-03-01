@@ -1,33 +1,48 @@
 apiVersion: vs.axis-dev.io/v1
 kind: AssemblyLine
 metadata:
-  name: staging-deploy
+  name: ticekt-1663-verify-staging-deploy
 spec:
   params:
     - name: gitRevision
       type: string
-    - name: imageName
-      type: string
   stages:
+    - name: build
+      spec:
+        pipeline: ticekt-1663-verify-nginx-demo-build
+        deployment:
+          app: ticekt-1663-verify-nginx-demo
+          name: ticekt-1663-verify-staging
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+          - name: cacheImageName
+            value: $(params.imageRegistryPath)/$(params.imageShortName)
     - name: deploy
       spec:
-        pipeline: nginx-demo-deploy
+        pipeline: ticekt-1663-verify-nginx-demo-deploy
         deployment:
-          app: nginx-demo
-          name: staging
+          app: ticekt-1663-verify-nginx-demo
+          name: ticekt-1663-verify-staging
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
           - name: imageName
-            value: $(inputs.imageName)
+            value: $(stages.build.results.imageFullNameTag)
+      runAfter:
+        - build
     - name: resolve-ip-address
       spec:
-        pipeline: nginx-demo-resolve-ip-address-after-deploy
+        pipeline: ticekt-1663-verify-nginx-demo-resolve-ip-address-after-deploy
         deployment:
-          app: nginx-demo
-          name: staging
+          app: ticekt-1663-verify-nginx-demo
+          name: ticekt-1663-verify-staging
       runAfter:
         - deploy
   results:
     - name: ipAddress
       value: $(stages.resolve-ip-address.results.ipAddress)
+    - name: imageName
+      value: $(stages.build.results.imageFullNameTag)
+    - name: gitRevision
+      value: $(inputs.gitRevision)
