@@ -11,7 +11,7 @@ DesignPattern: {
 	parameters: {
 		k8sNamespace: string
 		imageName:    string
-		secrets: [string]: {
+		secrets: string: {
 			key:     string
 			version: string
 		}
