@@ -1,8 +1,29 @@
 package local
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/yaml"
+	"list"
+	"strings"
+)
+
 _const: {
 	#name: "nginx-demo"
 	#port: 80
+}
+
+#Secret: {
+	key:     string
+	version: string
+}
+
+#ExternalSecret: {
+	provider:   "kubernetes"
+	apiVersion: "external-secrets.io/v1beta1"
+	kind:       "ExternalSecret"
+	output: [...string]
+	...
 }
 
 DesignPattern: {
@@ -11,16 +32,24 @@ DesignPattern: {
 	parameters: {
 		k8sNamespace: string
 		imageName:    string
-		secrets: string: {
-			key:     string
-			version: string
-		}
+		secrets: [string]: #Secret
 	}
 
 	resources: app: {
-		deployment: _deployment
-		service:    _service
+		deployment:     _deployment
+		service:        _service
+		externalSecret: _externalSecret
 	}
+
+	let _k8sNamespace = parameters.k8sNamespace
+	let _secrets = parameters.secrets
+
+	// This name is used for ExternalSecret metadata.name, target.name 
+	let _k8sSecretName = "\(_k8sNamespace)-secrets-\(_hash)"
+
+	let _esData = yaml.Marshal(_externalSecret.spec.data)
+
+	let _hash = strings.SliceRunes(hex.Encode(sha256.Sum256(_esData)), 0, 10)
 
 	let _selector = {
 		app: _const.#name
@@ -70,6 +99,35 @@ DesignPattern: {
 				targetPort: _const.#port
 			}]
 			selector: _selector
+		}
+	}
+
+	_externalSecret: #ExternalSecret & {
+		metadata: {
+			name:      _k8sSecretName
+			namespace: _k8sNamespace
+		}
+		spec: {
+			refreshInterval: "0"
+			secretStoreRef: {
+				name: "gcp-secret-manager"
+				kind: "ClusterSecretStore"
+			}
+			target: {
+				name:           _k8sSecretName
+				creationPolicy: "Owner"
+			}
+
+			// to determine order of elements of spec.data list uniquely, sort elements in ascending order based on secretKey
+			// this determines value of _hash in _k8sSecretName uniquely
+			let _dataUnsorted = [ for k, v in _secrets {
+				secretKey: k
+				remoteRef: {
+					key:     v.key
+					version: v.version
+				}
+			}]
+			data: list.Sort(_dataUnsorted, {x: {}, y: {}, less: x.secretKey < y.secretKey})
 		}
 	}
 
