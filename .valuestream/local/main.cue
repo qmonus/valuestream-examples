@@ -34,9 +34,7 @@ DesignPattern: {
 	parameters: {
 		k8sNamespace: string
 		imageName:    string
-		secrets: [...{
-			#SecretName: #Secret
-		}]
+		secrets: [string]: #Secret
 	}
 
 	resources: app: {
@@ -103,6 +101,31 @@ DesignPattern: {
 				targetPort: _const.#port
 			}]
 			selector: _selector
+		}
+	}
+
+	defer: {
+		app: {
+			for key, res in resources.app {
+				if res.kind == "Deployment" &&
+					res.metadata.namespace == _k8sNamespace {
+					let _envFrom = res.spec.template.spec.containers[0].envFrom
+
+					"\(key)": {
+						metadata: annotations: {
+							"vs.axis-dev.io/dependsOn": "external-secrets.io:ExternalSecret::\(_k8sNamespace)/\(_k8sSecretName)"
+						}
+						spec: template: spec: containers: [{
+							if _envFrom == _|_ {
+								envFrom: [{"secretRef": "name": _k8sSecretName}]
+							}
+							if _envFrom != _|_ {
+								envFrom: list.Concat([_envFrom, [{"secretRef": "name": _k8sSecretName}]])
+							}
+						}, ...]
+					}
+				}
+			}
 		}
 	}
 

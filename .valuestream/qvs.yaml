@@ -15,12 +15,12 @@ designPatterns:
       k8sNamespace: $(params.k8sNamespace)
       imageName:    $(params.imageName)
       secrets:
-        - SECRET01:
-            key: XXXXX
-            version: “2”
-        - SECRET02:
-            key: YYYYY
-            version: “2"
+        SECRET01:
+          key: XXXXX
+          version: “2”
+        SECRET02:
+          key: YYYYY
+          version: “2"
   - pattern: qmonus.net/adapter/official/pipeline/deploy:simple
   - pattern: qmonus.net/adapter/official/pipeline/build:buildkitGcp
   - pattern: qmonus.net/adapter/official/pipeline/sample:resolveIPAddress
