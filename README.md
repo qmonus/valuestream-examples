@@ -10,5 +10,4 @@ This application is the Todo application used in the QmonusValueStream tutorial.
 ```
 docker-compose up
 ```
-2.Access http://localhost:8080
-
+2.Visit https://localhost:8080 to access the Todo application.
