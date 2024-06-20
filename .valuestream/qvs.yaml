@@ -15,7 +15,7 @@ designPatterns:
       imageName:    $(params.imageName)
       appName: nginx-demo
       port: "80"
-      replicas: "1"
+      replicas: "2"
   - pattern: qmonus.net/adapter/official/kubernetes/sample:loadbalancer 
     params:
       k8sNamespace: $(params.k8sNamespace)
