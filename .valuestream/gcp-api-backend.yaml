@@ -1,0 +1,47 @@
+params:
+  - name: appName
+    type: string
+  - name: gcpProjectId
+    type: string
+  - name: dnsZoneProjectId
+    type: string
+  - name: dnsZoneName
+    type: string
+  - name: dnsARecordSubdomain
+    type: string
+  - name: mysqlInstanceId
+    type: string
+  - name: mysqlDatabaseName
+    type: string
+  - name: mysqlUserName
+    type: string
+  - name: k8sNamespace
+    type: string
+  - name: imageName
+    type: string
+  - name: port
+    type: string
+  - name: mysqlInstanceIpAddress
+    type: string
+  - name: env1
+    type: string
+modules:
+  - name: qmonus.net/adapter/official
+    revision: v0.29.0
+designPatterns:
+  - pattern: qmonus.net/adapter/official/adapters/gcp/container/kubernetes/apiBackend
+    params:
+      appName: $(params.appName)
+      mysqlDatabaseName: $(params.mysqlDatabaseName)
+      mysqlInstanceIpAddress: $(params.mysqlInstanceIpAddress)
+      dnsZoneProjectId: $(params.dnsZoneProjectId)
+      dnsZoneName: $(params.dnsZoneName)
+      environmentVariables:
+        TLS_OPTION: $(params.env1)
+      mysqlUserName: $(params.mysqlUserName)
+      dnsARecordSubdomain: $(params.dnsARecordSubdomain)
+      k8sNamespace: $(params.k8sNamespace)
+      mysqlInstanceId: $(params.mysqlInstanceId)
+      imageName: $(params.imageName)
+      gcpProjectId: $(params.gcpProjectId)
+      port: $(params.port)
