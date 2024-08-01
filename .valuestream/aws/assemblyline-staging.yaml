@@ -1,0 +1,36 @@
+apiVersion: vs.axis-dev.io/v1
+kind: AssemblyLine
+metadata:
+  name: staging-deploy
+spec:
+  params:
+    - name: gitRevision
+      type: string
+    - name: imageUri
+      type: string
+  stages:
+    - name: deploy
+      spec:
+        pipeline: nginx-demo-deploy
+        deployment:
+          app: nginx-demo
+          name: staging
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+          - name: imageUri
+            value: $(inputs.imageUri)
+    - name: get-url
+      spec:
+        pipeline: nginx-demo-get-url
+        deployment:
+          app: nginx-demo
+          name: staging
+        params:
+          - name: serviceName
+            value: nginx-demo
+      runAfter:
+        - deploy
+  results:
+    - name: serviceUrl
+      value: $(stages.get-url.results.serviceUrl)
