@@ -1,0 +1,33 @@
+apiVersion: vs.axis-dev.io/v1
+kind: AssemblyLine
+metadata:
+  name: staging-deploy
+spec:
+  params:
+    - name: gitRevision
+      type: string
+    - name: imageName
+      type: string
+  stages:
+    - name: deploy
+      spec:
+        pipeline: nginx-demo-deploy
+        deployment:
+          app: nginx-demo
+          name: staging
+        params:
+          - name: gitRevision
+            value: $(inputs.gitRevision)
+          - name: imageName
+            value: $(inputs.imageName)
+    - name: resolve-ip-address
+      spec:
+        pipeline: nginx-demo-resolve-ip-address-after-deploy
+        deployment:
+          app: nginx-demo
+          name: staging
+      runAfter:
+        - deploy
+  results:
+    - name: ipAddress
+      value: $(stages.resolve-ip-address.results.ipAddress)
