@@ -1,25 +1,17 @@
 params:
-  - name: k8sNamespace
+  - name: imageUri
     type: string
-  - name: imageName
+  - name: awsRegion
     type: string
 
 modules:
-  - name: github.com/qmonus/official-cloud-native-adapters
-    revision: v0.20.0
+  - name: https://github.com/qmonus/official-cloud-native-adapters-internal
+    revision: PROD-348_add-aws-sample-adapter
 
 designPatterns:
-  - pattern: qmonus.net/adapter/official/kubernetes/deployment/simple
+  - pattern: qmonus.net/adapter/official/adapters/aws/sample/serverless/webApp/apiBackend
     params:
-      k8sNamespace: $(params.k8sNamespace)
-      imageName:    $(params.imageName)
-      appName: nginx-demo
+      serviceName: nginx-demo
+      imageUri: $(params.imageUri)
       port: "80"
-      replicas: "1"
-  - pattern: qmonus.net/adapter/official/kubernetes/sample:loadbalancer 
-    params:
-      k8sNamespace: $(params.k8sNamespace)
-      appName: nginx-demo
-      port: "80"
-  - pattern: qmonus.net/adapter/official/pipeline/deploy:simple
-  - pattern: qmonus.net/adapter/official/pipeline/sample:resolveIPAddress
+      awsRegion: $(params.awsRegion)

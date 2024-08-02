@@ -6,7 +6,7 @@ spec:
   params:
     - name: gitRevision
       type: string
-    - name: imageName
+    - name: imageUri
       type: string
   stages:
     - name: deploy
@@ -18,16 +18,19 @@ spec:
         params:
           - name: gitRevision
             value: $(inputs.gitRevision)
-          - name: imageName
-            value: $(inputs.imageName)
-    - name: resolve-ip-address
+          - name: imageUri
+            value: $(inputs.imageUri)
+    - name: get-url
       spec:
-        pipeline: nginx-demo-resolve-ip-address-after-deploy
+        pipeline: nginx-demo-get-url
         deployment:
           app: nginx-demo
           name: staging
+        params:
+          - name: serviceName
+            value: nginx-demo
       runAfter:
         - deploy
   results:
-    - name: ipAddress
-      value: $(stages.resolve-ip-address.results.ipAddress)
+    - name: serviceUrl
+      value: $(stages.get-url.results.serviceUrl)
