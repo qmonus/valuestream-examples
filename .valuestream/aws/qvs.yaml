@@ -9,7 +9,7 @@ modules:
     revision: PROD-348_add-aws-sample-adapter
 
 designPatterns:
-  - pattern: qmonus.net/adapter/official/adapters/aws/sample/serverless/webApp/apiBackend
+  - pattern: qmonus.net/adapter/official/adapters/aws/sample/appRunner
     params:
       serviceName: nginx-demo
       imageUri: $(params.imageUri)
