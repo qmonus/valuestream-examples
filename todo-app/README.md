@@ -9,8 +9,12 @@
 ```bash
 .
 ├── .valuestream
-│   ├── assemblyline-staging.yaml  
-│   └── qvs.yaml  
+│   ├── aws
+│   │   ├── assemblyline-staging.yaml
+│   │   └── qvs.yaml
+│   └── kubernetes
+│       ├── assemblyline-staging.yaml
+│       └── qvs.yaml
 └── todo-app
     ├── backend  # バックエンドアプリケーション
     ├── frontend  # フロントエンドアプリケーション

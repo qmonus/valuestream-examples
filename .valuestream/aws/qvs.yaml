@@ -1,0 +1,17 @@
+params:
+  - name: imageUri
+    type: string
+  - name: awsRegion
+    type: string
+
+modules:
+  - name: github.com/qmonus/official-cloud-native-adapters
+    revision: v0.34.0
+
+designPatterns:
+  - pattern: qmonus.net/adapter/official/adapters/aws/sample/appRunner
+    params:
+      serviceName: nginx-demo
+      imageUri: $(params.imageUri)
+      port: "80"
+      awsRegion: $(params.awsRegion)
