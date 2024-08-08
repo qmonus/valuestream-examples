@@ -9,9 +9,9 @@ modules:
     revision: v0.34.0
 
 designPatterns:
-  - pattern: qmonus.net/adapter/official/adapters/aws/sample/appRunner
-    params:
-      serviceName: nginx-demo
-      imageUri: $(params.imageUri)
-      port: "80"
-      awsRegion: $(params.awsRegion)
+  # - pattern: qmonus.net/adapter/official/adapters/aws/sample/appRunner
+  #   params:
+  #     serviceName: nginx-demo
+  #     imageUri: $(params.imageUri)
+  #     port: "80"
+  #     awsRegion: $(params.awsRegion)
