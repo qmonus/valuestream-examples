@@ -5,6 +5,7 @@ import (
 	"demo-backend-app/pkg/env"
 	"fmt"
 
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -21,6 +22,15 @@ func ConnectMySQL() (*gorm.DB, error) {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect mysql: %w", err)
+	}
+	return db, nil
+}
+
+func ConnectSQLite() (*gorm.DB, error) {
+	// refer https://gorm.io/ja_JP/docs/index.html for details
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect sqlite: %w", err)
 	}
 	return db, nil
 }

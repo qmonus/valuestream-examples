@@ -70,9 +70,18 @@ func (s *Server) initSrv() {
 }
 
 func (s *Server) initDB() {
-	db, err := database.ConnectMySQL()
-	if err != nil {
-		panic(err)
+	var db *gorm.DB
+	var err error
+	if env.EnableSQLite == "true" {
+		db, err = database.ConnectSQLite()
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		db, err = database.ConnectMySQL()
+		if err != nil {
+			panic(err)
+		}
 	}
 	database.Initialize(db)
 	s.db = db
