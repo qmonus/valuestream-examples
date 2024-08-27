@@ -1,0 +1,101 @@
+params:
+  - name: appName
+    type: string
+  - name: azureSubscriptionId
+    type: string
+  - name: azureResourceGroupName
+    type: string
+  - name: azureDnsZoneResourceGroupName
+    type: string
+  - name: azureDnsZoneName
+    type: string
+  - name: azureDnsARecordName
+    type: string
+  - name: azureStaticIpAddress
+    type: string
+  - name: mysqlCreateDbName
+    type: string
+  - name: azureKeyVaultKeyContainerName
+    type: string
+  - name: clusterIssuerName
+    type: string
+  - name: k8sNamespace
+    type: string
+  - name: imageName
+    type: string
+  - name: port
+    type: string
+  - name: dbHost
+    type: string
+  - name: redisHost
+    type: string
+  - name: redisPasswordSecretName
+    type: string
+  - name: host
+    type: string
+modules:
+  - name: qmonus.net/adapter/official
+    revision: v0.29.0
+designPatterns:
+  - pattern: qmonus.net/adapter/official/adapters/azure/container/kubernetes/apiBackend
+    params:
+      appName: $(params.appName)
+      imageName: $(params.imageName)
+      azureDnsZoneResourceGroupName: $(params.azureDnsZoneResourceGroupName)
+      azureKeyVaultKeyContainerName: $(params.azureKeyVaultKeyContainerName)
+      redisPasswordSecretName: $(params.redisPasswordSecretName)
+      k8sNamespace: $(params.k8sNamespace)
+      azureSubscriptionId: $(params.azureSubscriptionId)
+      host: $(params.host)
+      port: $(params.port)
+      azureDnsARecordName: $(params.azureDnsARecordName)
+      azureDnsZoneName: $(params.azureDnsZoneName)
+      dbHost: $(params.dbHost)
+      mysqlCreateDbName: $(params.mysqlCreateDbName)
+      clusterIssuerName: $(params.clusterIssuerName)
+      azureStaticIpAddress: $(params.azureStaticIpAddress)
+      azureResourceGroupName: $(params.azureResourceGroupName)
+      redisHost: $(params.redisHost)
+  - pattern: qmonus.net/adapter/official/pipeline/utils/pulumi:refer
+    pipelineParams:
+      jqQueries:
+        - query:
+            selector: .type == "azure-native:containerregistry:Registry"
+            path: .outputs.loginServer
+          name: ContainerRegistry
+        - query:
+            selector: .type == "azure-native:containerregistry:Registry"
+            path: .outputs.loginServer
+          name: ImageRegistryPath
+        - query:
+            selector: .type == "kubernetes:cert-manager.io/v1:ClusterIssuer"
+            path: .outputs.spec.acme.solvers[0].dns01.azureDNS.subscriptionID
+          name: AzureSubscriptionId
+        - query:
+            selector: .type == "azure-native:resources:ResourceGroup"
+            path: .outputs.name
+          name: AzureResourceGroupName
+        - query:
+            selector: .type == "azure-native:network:PublicIPAddress"
+            path: .outputs.ipAddress
+          name: AzureStaticIpAddress
+        - query:
+            selector: .type == "azure-native:keyvault:Vault" and (.urn | (type == "string" and endswith("azure-native:keyvault:Vault::keyVault")))
+            path: .outputs.name
+          name: AzureKeyVaultKeyContainerName
+        - query:
+            selector: .type == "kubernetes:cert-manager.io/v1:ClusterIssuer"
+            path: .outputs.metadata.name
+          name: ClusterIssuerName
+        - query:
+            selector: .type == "azure:mysql/flexibleServer:FlexibleServer"
+            path: .outputs.fqdn
+          name: DbHost
+        - query:
+            selector: .type == "azure:redis/cache:Cache"
+            path: .outputs.hostname
+          name: RedisHost
+        - query:
+            selector: .type == "azure-native:keyvault:Secret" and (.urn | (type == "string" and endswith("azure-native:keyvault:Secret::redisPrimaryKeySecret")))
+            path: .outputs.name
+          name: RedisPasswordSecretName
