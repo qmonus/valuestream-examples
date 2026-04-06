@@ -1,12 +1,8 @@
 
 .PHONY: run
 run:
-	vue serve
-
-.PHONY: fmt
-fmt:
-	go fmt ./...
+	npx vite
 
 .PHONY: build
 build:
-	vue build
+	npx vite build

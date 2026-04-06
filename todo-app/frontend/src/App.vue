@@ -98,7 +98,7 @@ export default {
     fetchTodos: function () {
       console.info("GET /todos")
       axios
-        .get(process.env.VUE_APP_API_ENDPOINT + "/todos")
+        .get(import.meta.env.VUE_APP_API_ENDPOINT + "/todos")
         .then(response => {
           console.info(response)
           this.todos = response.data.items
@@ -111,7 +111,7 @@ export default {
       console.info("POST /todos")
       console.info(item)
       axios
-        .post(process.env.VUE_APP_API_ENDPOINT + "/todos", item)
+        .post(import.meta.env.VUE_APP_API_ENDPOINT + "/todos", item)
         .then(response => {
           console.info(response)
           this.fetchTodos()
@@ -123,7 +123,7 @@ export default {
       console.info("PUT /todos/" + item.id)
       console.info(item)
       axios
-        .put(process.env.VUE_APP_API_ENDPOINT + "/todos/" + item.id, item)
+        .put(import.meta.env.VUE_APP_API_ENDPOINT + "/todos/" + item.id, item)
         .then(response => {
           console.info(response)
           this.fetchTodos()
@@ -134,7 +134,7 @@ export default {
     deleteTodo: function (index) {
       console.info("DELETE /todos/" + index)
       axios
-        .delete(process.env.VUE_APP_API_ENDPOINT + "/todos/" + index)
+        .delete(import.meta.env.VUE_APP_API_ENDPOINT + "/todos/" + index)
         .then(response => {
           console.info(response)
           this.fetchTodos()
